@@ -1,0 +1,10 @@
+# Output files
+bin/
+*.dcu
+*.exe
+
+# Backup files
+*.~*
+
+# Recreatable files
+*.cfg

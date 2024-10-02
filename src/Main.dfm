@@ -1,0 +1,62 @@
+object MainForm: TMainForm
+  Left = 200
+  Top = 160
+  BorderIcons = []
+  BorderStyle = bsNone
+  Caption = 'PingMonitor'
+  ClientHeight = 24
+  ClientWidth = 115
+  Color = clBlack
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Verdana'
+  Font.Style = []
+  FormStyle = fsStayOnTop
+  OldCreateOrder = False
+  Position = poScreenCenter
+  OnCreate = FormCreate
+  PixelsPerInch = 96
+  TextHeight = 13
+  object PingPanel: TPanel
+    Left = 0
+    Top = 0
+    Width = 49
+    Height = 24
+    BevelOuter = bvNone
+    Caption = 'PingPanel'
+    Color = clBlack
+    TabOrder = 0
+    object PingFrame: TShape
+      Left = 1
+      Top = 1
+      Width = 47
+      Height = 22
+      Brush.Color = clBlack
+      Pen.Color = clWhite
+      Pen.Width = 2
+    end
+    object PingLabel: TLabel
+      Left = 0
+      Top = 0
+      Width = 49
+      Height = 24
+      Align = alClient
+      Alignment = taCenter
+      AutoSize = False
+      Caption = #8226
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWhite
+      Font.Height = -11
+      Font.Name = 'Verdana'
+      Font.Style = [fsBold]
+      ParentFont = False
+      Transparent = True
+      Layout = tlCenter
+    end
+  end
+  object PingTimer: TTimer
+    OnTimer = PingTimerTimer
+    Left = 88
+  end
+end
