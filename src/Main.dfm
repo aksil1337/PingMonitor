@@ -53,6 +53,7 @@ object MainForm: TMainForm
       ParentFont = False
       Transparent = True
       Layout = tlCenter
+      OnMouseDown = PingLabelMouseDown
     end
   end
   object PingTimer: TTimer

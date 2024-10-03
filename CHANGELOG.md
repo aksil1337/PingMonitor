@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1 Drag Move (2024-10-03)
++ Added a possibility to drag the Main form using a mouse
+
 ## 1.0 Initial Release (2024-10-02)
 + Created the Main form displaying a color-changing label reflecting the current latency value
 + Created the Ping class to handle ICMP echo requests

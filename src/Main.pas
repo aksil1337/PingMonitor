@@ -14,6 +14,11 @@ type
     PingTimer: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure PingTimerTimer(Sender: TObject);
+    procedure PingLabelMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+  private
+    procedure DragMove;
+    procedure FixFormLocation;
   end;
 
 const
@@ -31,6 +36,8 @@ var
 implementation
 
 {$R *.dfm}
+
+{ Events }
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
@@ -67,6 +74,38 @@ begin
 
   PingLabel.Font.Color := PingColor;
   PingFrame.Pen.Color := PingColor;
+end;
+
+procedure TMainForm.PingLabelMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  MainForm.ActiveControl := nil;
+
+  if (Button = mbLeft) then
+    DragMove;
+end;
+
+{ Methods }
+
+procedure TMainForm.DragMove;
+begin
+  ReleaseCapture;
+  Perform(WM_SYSCOMMAND, $F012, 0);
+
+  FixFormLocation;
+end;
+
+procedure TMainForm.FixFormLocation;
+begin
+  if (MainForm.Left < 0) then
+    MainForm.Left := 0
+  else if (MainForm.Left + MainForm.Width > Screen.Width) then
+    MainForm.Left := Screen.Width - MainForm.Width;
+
+  if (MainForm.Top < 0) then
+    MainForm.Top := 0
+  else if (MainForm.Top + MainForm.Height > Screen.Height) then
+    MainForm.Top := Screen.Height - MainForm.Height;
 end;
 
 end.
