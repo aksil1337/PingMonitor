@@ -57,6 +57,7 @@ object MainForm: TMainForm
     end
   end
   object PingTimer: TTimer
+    Enabled = False
     OnTimer = PingTimerTimer
     Left = 88
   end

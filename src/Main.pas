@@ -32,6 +32,7 @@ const
 
 var
   MainForm: TMainForm;
+  Ping: TPing;
 
 implementation
 
@@ -43,6 +44,11 @@ procedure TMainForm.FormCreate(Sender: TObject);
 begin
   MainForm.ClientHeight := 24;
   MainForm.ClientWidth := 49;
+
+  Ping := TPing.Create;
+
+  if (Ping.Initialized) then
+    PingTimer.Enabled := True;
 end;
 
 procedure TMainForm.PingTimerTimer(Sender: TObject);
@@ -50,7 +56,7 @@ var
   PingReply: TPingReply;
   PingColor: TColor;
 begin
-  PingReply := TPing.Send('google.com');
+  PingReply := Ping.Send('google.com');
 
   if (PingReply.Time > 999) then
     PingTimer.Interval := 1000

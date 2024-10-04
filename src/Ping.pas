@@ -47,14 +47,33 @@ type
   end;
 
   TPing = class
+  private
+    WSAData: TWSAData;
   public
-    class function GetHostAddress(const HostName: String): PInAddr;
-    class function Send(const HostName: String; Timeout: Cardinal = 5000): TPingReply;
+    Initialized: Boolean;
+    constructor Create;
+    destructor Destroy; override;
+    function GetHostAddress(const HostName: String): PInAddr;
+    function Send(const HostName: String; Timeout: Cardinal = 4000): TPingReply;
   end;
 
 implementation
 
-class function TPing.GetHostAddress(const HostName: String): PInAddr;
+constructor TPing.Create;
+var
+  WSAError: Integer;
+begin
+  WSAError := WSAStartup(MakeWord(2, 2), WSAData);
+  Initialized := (WSAError = 0);
+end;
+
+destructor TPing.Destroy;
+begin
+  if (Initialized) then
+    WSACleanup;
+end;
+
+function TPing.GetHostAddress(const HostName: String): PInAddr;
 var
   HostEntity: PHostEnt;
 begin
@@ -66,68 +85,60 @@ begin
     Result := nil;
 end;
 
-class function TPing.Send(const HostName: String; Timeout: Cardinal): TPingReply;
+function TPing.Send(const HostName: String; Timeout: Cardinal): TPingReply;
 var
-  WSAData: TWSAData;
   IcmpHandle: THandle;
   Request: TIcmpEchoRequest;
   Reply: PIcmpEchoReply;
   ReplySize: Cardinal;
   PingReply: TPingReply;
 begin
-  IcmpHandle := High(Cardinal);
   PingReply.Time := High(Cardinal);
 
-  try
-    WSAStartup($101, WSAData);
-    IcmpHandle := IcmpCreateFile;
+  IcmpHandle := IcmpCreateFile;
 
-    if (IcmpHandle = INVALID_HANDLE_VALUE) then
-      PingReply.Result := 'Invalid ICMP handle'
+  if (IcmpHandle = INVALID_HANDLE_VALUE) then
+    PingReply.Result := 'Invalid ICMP handle'
+  else
+  begin
+    Request.Address := GetHostAddress(HostName);
+    Request.Data := IntToHex(Random(Cardinal($FFFFFFFF)), 32);
+    Request.DataSize := Length(Request.Data);
+
+    if (Request.Address = nil) then
+      PingReply.Result := 'Host not found'
     else
     begin
-      Request.Address := GetHostAddress(HostName);
-      Request.Data := IntToHex(Random(Cardinal($FFFFFFFF)), 32);
-      Request.DataSize := Length(Request.Data);
+      ReplySize := SizeOf(TIcmpEchoReply) + Request.DataSize;
+      GetMem(Reply, ReplySize);
 
-      if (Request.Address = nil) then
-        PingReply.Result := 'Host not found'
-      else
-      begin
-        ReplySize := SizeOf(TIcmpEchoReply) + Request.DataSize;
-        GetMem(Reply, ReplySize);
+      IcmpSendEcho(IcmpHandle, Request.Address^, PChar(Request.Data),
+                   Request.DataSize, nil, Reply, ReplySize, Timeout);
 
-        IcmpSendEcho(IcmpHandle, Request.Address^, PChar(Request.Data),
-                     Request.DataSize, nil, Reply, ReplySize, Timeout);
+      case (Reply.Status) of
+        0:
+        begin
+          PingReply.Time := Reply.RoundTripTime;
 
-        case (Reply.Status) of
-          0:
-          begin
-            PingReply.Time := Reply.RoundTripTime;
-
-            PingReply.Result := Format('IP=%s Bytes=%d TTL=%d Time=%dms', [
-              Inet_ntoa(TInAddr(Reply.Address)),
-              Reply.DataSize,
-              Reply.Options.TTL,
-              Reply.RoundTripTime
-            ]);
-          end;
-          11002:
-            PingReply.Result := 'Destination network unreachable';
-          11010:
-            PingReply.Result := 'Request timed out';
-          else
-            PingReply.Result := 'General failure: IPStatus=' + IntToStr(Reply.Status);
+          PingReply.Result := Format('IP=%s Bytes=%d TTL=%d Time=%dms', [
+            Inet_ntoa(TInAddr(Reply.Address)),
+            Reply.DataSize,
+            Reply.Options.TTL,
+            Reply.RoundTripTime
+          ]);
         end;
-
-        FreeMem(Reply);
+        11002:
+          PingReply.Result := 'Destination network unreachable';
+        11010:
+          PingReply.Result := 'Request timed out';
+        else
+          PingReply.Result := 'General failure: IPStatus=' + IntToStr(Reply.Status);
       end;
-    end;
-  finally
-    if (IcmpHandle <> High(Cardinal)) then
-      IcmpCloseHandle(IcmpHandle);
 
-    WSACleanup;
+      FreeMem(Reply);
+    end;
+
+    IcmpCloseHandle(IcmpHandle);
   end;
 
   Result := PingReply;

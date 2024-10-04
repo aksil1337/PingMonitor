@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1b Page Fault Fix (2024-10-04)
+- Fixed a bug with incremental Page Faults by refactoring the Ping class
+
 ## 1.1 Drag Move (2024-10-03)
 + Added a possibility to drag the Main form using a mouse
 
