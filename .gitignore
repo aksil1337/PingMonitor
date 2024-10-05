@@ -7,4 +7,5 @@ bin/
 *.~*
 
 # Recreatable files
+PingMonitor.res
 *.cfg

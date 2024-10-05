@@ -4,7 +4,7 @@ interface
 
 uses
   StdCtrls, ExtCtrls, Controls, Classes, Windows, Forms, Dialogs, Messages,
-  SysUtils, StrUtils, Graphics, Ping;
+  SysUtils, StrUtils, Graphics, Menus, Ping;
 
 type
   TMainForm = class(TForm)
@@ -12,10 +12,13 @@ type
     PingFrame: TShape;
     PingLabel: TLabel;
     PingTimer: TTimer;
+    PopupMenu: TPopupMenu;
+    ExitOption: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure PingTimerTimer(Sender: TObject);
     procedure PingLabelMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure ExitOptionClick(Sender: TObject);
   private
     procedure DragMove;
     procedure FixFormLocation;
@@ -89,6 +92,11 @@ begin
 
   if (Button = mbLeft) then
     DragMove;
+end;
+
+procedure TMainForm.ExitOptionClick(Sender: TObject);
+begin
+  Application.Terminate;
 end;
 
 { Methods }

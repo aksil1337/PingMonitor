@@ -51,6 +51,7 @@ object MainForm: TMainForm
       Font.Name = 'Verdana'
       Font.Style = [fsBold]
       ParentFont = False
+      PopupMenu = PopupMenu
       Transparent = True
       Layout = tlCenter
       OnMouseDown = PingLabelMouseDown
@@ -60,5 +61,12 @@ object MainForm: TMainForm
     Enabled = False
     OnTimer = PingTimerTimer
     Left = 88
+  end
+  object PopupMenu: TPopupMenu
+    Left = 56
+    object ExitOption: TMenuItem
+      Caption = 'Exit'
+      OnClick = ExitOptionClick
+    end
   end
 end

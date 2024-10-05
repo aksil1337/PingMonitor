@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2 Icon and Menu (2024-10-05)
++ Added high-definition application icon
++ Added popup menu
++ Added git-backup and update-version scripts
+
 ## 1.1b Page Fault Fix (2024-10-04)
 - Fixed a bug with incremental Page Faults by refactoring the Ping class
 
