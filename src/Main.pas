@@ -7,6 +7,11 @@ uses
   SysUtils, StrUtils, Graphics, Menus, Ping;
 
 type
+  TPingThread = class(TThread)
+  public
+    procedure Execute; override;
+  end;
+
   TMainForm = class(TForm)
     PingPanel: TPanel;
     PingFrame: TShape;
@@ -20,6 +25,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure ExitOptionClick(Sender: TObject);
   private
+    procedure SendPing;
     procedure DragMove;
     procedure FixFormLocation;
   end;
@@ -48,23 +54,44 @@ begin
   MainForm.ClientHeight := 24;
   MainForm.ClientWidth := 49;
 
-  Ping := TPing.Create;
+  Ping := TPing.Create('dns.google');
 
   if (Ping.Initialized) then
     PingTimer.Enabled := True;
 end;
 
 procedure TMainForm.PingTimerTimer(Sender: TObject);
+begin
+  TPingThread.Create(false);
+end;
+
+procedure TMainForm.PingLabelMouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  MainForm.ActiveControl := nil;
+
+  if (Button = mbLeft) then
+    DragMove;
+end;
+
+procedure TMainForm.ExitOptionClick(Sender: TObject);
+begin
+  Application.Terminate;
+end;
+
+{ Methods }
+
+procedure TPingThread.Execute;
+begin
+  MainForm.SendPing;
+end;
+
+procedure TMainForm.SendPing;
 var
   PingReply: TPingReply;
   PingColor: TColor;
 begin
-  PingReply := Ping.Send('google.com');
-
-  if (PingReply.Time > 999) then
-    PingTimer.Interval := 1000
-  else
-    PingTimer.Interval := 1000 - PingReply.Time;
+  PingReply := Ping.Send;
 
   case (PingReply.Time) of
     0..19:                  PingColor := Green;
@@ -84,22 +111,6 @@ begin
   PingLabel.Font.Color := PingColor;
   PingFrame.Pen.Color := PingColor;
 end;
-
-procedure TMainForm.PingLabelMouseDown(Sender: TObject;
-  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-  MainForm.ActiveControl := nil;
-
-  if (Button = mbLeft) then
-    DragMove;
-end;
-
-procedure TMainForm.ExitOptionClick(Sender: TObject);
-begin
-  Application.Terminate;
-end;
-
-{ Methods }
 
 procedure TMainForm.DragMove;
 begin

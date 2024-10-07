@@ -48,21 +48,26 @@ type
 
   TPing = class
   private
+    HostName: String;
+    Timeout: Cardinal;
     WSAData: TWSAData;
   public
     Initialized: Boolean;
-    constructor Create;
+    constructor Create(const HostName: String; Timeout: Cardinal = 4000);
     destructor Destroy; override;
-    function GetHostAddress(const HostName: String): PInAddr;
-    function Send(const HostName: String; Timeout: Cardinal = 4000): TPingReply;
+    function GetHostAddress: PInAddr;
+    function Send: TPingReply;
   end;
 
 implementation
 
-constructor TPing.Create;
+constructor TPing.Create(const HostName: String; Timeout: Cardinal);
 var
   WSAError: Integer;
 begin
+  Self.HostName := HostName;
+  Self.Timeout := Timeout;
+
   WSAError := WSAStartup(MakeWord(2, 2), WSAData);
   Initialized := (WSAError = 0);
 end;
@@ -73,7 +78,7 @@ begin
     WSACleanup;
 end;
 
-function TPing.GetHostAddress(const HostName: String): PInAddr;
+function TPing.GetHostAddress: PInAddr;
 var
   HostEntity: PHostEnt;
 begin
@@ -85,7 +90,7 @@ begin
     Result := nil;
 end;
 
-function TPing.Send(const HostName: String; Timeout: Cardinal): TPingReply;
+function TPing.Send: TPingReply;
 var
   IcmpHandle: THandle;
   Request: TIcmpEchoRequest;
@@ -101,7 +106,7 @@ begin
     PingReply.Result := 'Invalid ICMP handle'
   else
   begin
-    Request.Address := GetHostAddress(HostName);
+    Request.Address := GetHostAddress;
     Request.Data := IntToHex(Random(Cardinal($FFFFFFFF)), 32);
     Request.DataSize := Length(Request.Data);
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3 Ping Thread (2024-10-07)
++ Added a separate execution thread to prevent blocking the UI while waiting for ICMP echo replies
+
 ## 1.2 Icon and Menu (2024-10-05)
 + Added high-definition application icon
 + Added popup menu
