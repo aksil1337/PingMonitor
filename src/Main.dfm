@@ -4,7 +4,7 @@ object MainForm: TMainForm
   BorderIcons = []
   BorderStyle = bsNone
   Caption = 'PingMonitor'
-  ClientHeight = 24
+  ClientHeight = 27
   ClientWidth = 115
   Color = clBlack
   Font.Charset = DEFAULT_CHARSET
@@ -14,10 +14,19 @@ object MainForm: TMainForm
   Font.Style = []
   FormStyle = fsStayOnTop
   OldCreateOrder = False
+  PopupMenu = PopupMenu
   Position = poScreenCenter
   OnCreate = FormCreate
+  OnMouseDown = FormMouseDown
   PixelsPerInch = 96
   TextHeight = 13
+  object InspectGrid: TPaintBox
+    Left = 1
+    Top = 24
+    Width = 47
+    Height = 2
+    OnMouseDown = FormMouseDown
+  end
   object PingPanel: TPanel
     Left = 0
     Top = 0
@@ -51,10 +60,9 @@ object MainForm: TMainForm
       Font.Name = 'Verdana'
       Font.Style = [fsBold]
       ParentFont = False
-      PopupMenu = PopupMenu
       Transparent = True
       Layout = tlCenter
-      OnMouseDown = PingLabelMouseDown
+      OnMouseDown = FormMouseDown
     end
   end
   object PingTimer: TTimer

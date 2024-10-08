@@ -19,12 +19,15 @@ type
     PingTimer: TTimer;
     PopupMenu: TPopupMenu;
     ExitOption: TMenuItem;
+    InspectGrid: TPaintBox;
     procedure FormCreate(Sender: TObject);
     procedure PingTimerTimer(Sender: TObject);
-    procedure PingLabelMouseDown(Sender: TObject; Button: TMouseButton;
+    procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ExitOptionClick(Sender: TObject);
   private
+    GridColors: Array[1..16] of TColor;
+    procedure UpdateInspectGrid(Color: TColor = clNone);
     procedure SendPing;
     procedure DragMove;
     procedure FixFormLocation;
@@ -51,7 +54,7 @@ implementation
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
-  MainForm.ClientHeight := 24;
+  MainForm.ClientHeight := 27;
   MainForm.ClientWidth := 49;
 
   Ping := TPing.Create('dns.google');
@@ -65,8 +68,8 @@ begin
   TPingThread.Create(false);
 end;
 
-procedure TMainForm.PingLabelMouseDown(Sender: TObject;
-  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TMainForm.FormMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
 begin
   MainForm.ActiveControl := nil;
 
@@ -110,6 +113,53 @@ begin
 
   PingLabel.Font.Color := PingColor;
   PingFrame.Pen.Color := PingColor;
+
+  UpdateInspectGrid(PingColor);
+end;
+
+procedure TMainForm.UpdateInspectGrid(Color: TColor);
+var
+  I: Byte;
+  P, W: Byte;
+begin
+  if (Color <> clNone) then
+  begin
+    for I := 16 downto 2 do
+      GridColors[I] := GridColors[I - 1];
+
+    GridColors[1] := Color;
+  end;
+
+  P := 0;
+  W := 0;
+
+  InspectGrid.Invalidate;
+  InspectGrid.Refresh;
+
+  for I := 1 to 16 do
+  begin
+    case (GridColors[I]) of
+      Green:  W := 2;
+      White:  W := 3;
+      Yellow: W := 4;
+      Amber:  W := 5;
+      Orange: W := 6;
+      Red:    W := 7;
+      Ruby:   W := 7;
+    end;
+
+    InspectGrid.Canvas.Pen.Color := GridColors[I];
+    InspectGrid.Canvas.Brush.Color := GridColors[I];
+    InspectGrid.Canvas.Rectangle(P, 0, P + W, 2);
+
+    P := P + W + 1;
+
+    if (P >= InspectGrid.Width) then
+    begin
+      InspectGrid.Canvas.Rectangle(P - 1, 0, P + 1, 2);
+      Break;
+    end;
+  end;
 end;
 
 procedure TMainForm.DragMove;
@@ -131,6 +181,8 @@ begin
     MainForm.Top := 0
   else if (MainForm.Top + MainForm.Height > Screen.Height) then
     MainForm.Top := Screen.Height - MainForm.Height;
+
+  UpdateInspectGrid;
 end;
 
 end.

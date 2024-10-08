@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.4 Inspect Grid (2024-10-08)
++ Added a colorful grid to be able to visually inspect the last few latency values
+
 ## 1.3 Ping Thread (2024-10-07)
 + Added a separate execution thread to prevent blocking the UI while waiting for ICMP echo replies
 
