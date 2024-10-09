@@ -65,11 +65,6 @@ object MainForm: TMainForm
       OnMouseDown = FormMouseDown
     end
   end
-  object PingTimer: TTimer
-    Enabled = False
-    OnTimer = PingTimerTimer
-    Left = 88
-  end
   object PopupMenu: TPopupMenu
     Left = 56
     object ExitOption: TMenuItem

@@ -42,8 +42,9 @@ type
   end;
 
   TPingReply = packed record
+    Failure: Boolean;
     Result: String;
-    Time: Cardinal;
+    Time: Word;
   end;
 
   TPing = class
@@ -98,7 +99,8 @@ var
   ReplySize: Cardinal;
   PingReply: TPingReply;
 begin
-  PingReply.Time := High(Cardinal);
+  PingReply.Failure := True;
+  PingReply.Time := 0;
 
   IcmpHandle := IcmpCreateFile;
 
@@ -131,6 +133,8 @@ begin
             Reply.Options.TTL,
             Reply.RoundTripTime
           ]);
+
+          PingReply.Failure := False;
         end;
         11002:
           PingReply.Result := 'Destination network unreachable';

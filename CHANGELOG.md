@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5 Ping Throttle (2024-10-09)
++ Added a throttling mechanism to send more pings while maintaining a similar refresh rate
+* Replaced the Timer component with an infinite loop inside the Ping Thread to gain more control over the process
+
 ## 1.4 Inspect Grid (2024-10-08)
 + Added a colorful grid to be able to visually inspect the last few latency values
 

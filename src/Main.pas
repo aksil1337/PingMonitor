@@ -4,7 +4,7 @@ interface
 
 uses
   StdCtrls, ExtCtrls, Controls, Classes, Windows, Forms, Dialogs, Messages,
-  SysUtils, StrUtils, Graphics, Menus, Ping;
+  SysUtils, StrUtils, Math, Graphics, Menus, Ping;
 
 type
   TPingThread = class(TThread)
@@ -16,19 +16,17 @@ type
     PingPanel: TPanel;
     PingFrame: TShape;
     PingLabel: TLabel;
-    PingTimer: TTimer;
     PopupMenu: TPopupMenu;
     ExitOption: TMenuItem;
     InspectGrid: TPaintBox;
     procedure FormCreate(Sender: TObject);
-    procedure PingTimerTimer(Sender: TObject);
     procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ExitOptionClick(Sender: TObject);
   private
     GridColors: Array[1..16] of TColor;
+    procedure UpdatePing(Time: Word; Failure: Boolean);
     procedure UpdateInspectGrid(Color: TColor = clNone);
-    procedure SendPing;
     procedure DragMove;
     procedure FixFormLocation;
   end;
@@ -41,6 +39,8 @@ const
   Orange = TColor($0888F8); { #f88808 }
   Red    = TColor($2828D8); { #d82828 }
   Ruby   = TColor($0808A8); { #a80808 }
+
+  PingInterval = 250;
 
 var
   MainForm: TMainForm;
@@ -60,12 +60,7 @@ begin
   Ping := TPing.Create('dns.google');
 
   if (Ping.Initialized) then
-    PingTimer.Enabled := True;
-end;
-
-procedure TMainForm.PingTimerTimer(Sender: TObject);
-begin
-  TPingThread.Create(false);
+    TPingThread.Create(false);
 end;
 
 procedure TMainForm.FormMouseDown(Sender: TObject; Button: TMouseButton;
@@ -85,36 +80,54 @@ end;
 { Methods }
 
 procedure TPingThread.Execute;
-begin
-  MainForm.SendPing;
-end;
-
-procedure TMainForm.SendPing;
 var
   PingReply: TPingReply;
-  PingColor: TColor;
+  PingTotal: Cardinal;
+  PingMax: Word;
 begin
-  PingReply := Ping.Send;
+  while True do
+  begin
+    PingTotal := 0;
+    PingMax := 0;
 
-  case (PingReply.Time) of
-    0..19:                  PingColor := Green;
-    20..49:                 PingColor := White;
-    50..99:                 PingColor := Yellow;
-    100..199:               PingColor := Amber;
-    200..999:               PingColor := Orange;
-    1000..High(Cardinal)-1: PingColor := Red;
-    else                    PingColor := Ruby;
+    while True do
+    begin
+      PingReply := Ping.Send;
+
+      PingMax := Max(PingReply.Time, PingMax);
+
+      Inc(PingTotal, Max(PingReply.Time, PingInterval));
+
+      if (PingReply.Time < PingInterval) then
+        Sleep(IfThen(PingReply.Failure, 1000, PingInterval - PingReply.Time));
+
+      if (PingReply.Failure) or (PingTotal >= 1000) then
+        Break;
+    end;
+
+    MainForm.UpdatePing(PingMax, PingReply.Failure);
+  end;
+end;
+
+procedure TMainForm.UpdatePing(Time: Word; Failure: Boolean);
+var
+  Color: TColor;
+begin
+  case (Time) of
+    0..19:    Color := IfThen(Failure, Ruby, Green);
+    20..49:   Color := White;
+    50..99:   Color := Yellow;
+    100..199: Color := Amber;
+    200..999: Color := Orange;
+    else      Color := Red;
   end;
 
-  case (PingReply.Time) of
-    High(Cardinal): PingLabel.Caption := '!';
-    else            PingLabel.Caption := Format('%d', [PingReply.Time]);
-  end;
+  PingLabel.Caption := IfThen(Failure, '!', Format('%d', [Time]));
 
-  PingLabel.Font.Color := PingColor;
-  PingFrame.Pen.Color := PingColor;
+  PingLabel.Font.Color := Color;
+  PingFrame.Pen.Color := Color;
 
-  UpdateInspectGrid(PingColor);
+  UpdateInspectGrid(Color);
 end;
 
 procedure TMainForm.UpdateInspectGrid(Color: TColor);
