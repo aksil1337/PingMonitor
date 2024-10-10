@@ -26,6 +26,7 @@ object MainForm: TMainForm
     Width = 47
     Height = 2
     OnMouseDown = FormMouseDown
+    OnPaint = InspectGridPaint
   end
   object PingPanel: TPanel
     Left = 0
