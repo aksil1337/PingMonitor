@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5b Repaint Fix (2024-10-10)
+- Fixed a bug that caused the Inspect Grid to briefly appear blank after the Main form was obscured
+
 ## 1.5 Ping Throttle (2024-10-09)
 + Added a throttling mechanism to send more pings while maintaining a similar refresh rate
 * Replaced the Timer component with an infinite loop inside the Ping Thread to gain more control over the process
