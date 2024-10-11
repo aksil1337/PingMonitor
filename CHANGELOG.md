@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.6 Ping Log (2024-10-11)
++ Created the Auxiliary form displaying detailed information about recent ICMP echo replies
+
 ## 1.5b Repaint Fix (2024-10-10)
 - Fixed a bug that caused the Inspect Grid to briefly appear blank after the Main form was obscured
 

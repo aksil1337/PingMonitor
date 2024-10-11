@@ -17,6 +17,7 @@ object MainForm: TMainForm
   PopupMenu = PopupMenu
   Position = poScreenCenter
   OnCreate = FormCreate
+  OnDblClick = LogOptionClick
   OnMouseDown = FormMouseDown
   PixelsPerInch = 96
   TextHeight = 13
@@ -25,6 +26,7 @@ object MainForm: TMainForm
     Top = 24
     Width = 47
     Height = 2
+    OnDblClick = LogOptionClick
     OnMouseDown = FormMouseDown
     OnPaint = InspectGridPaint
   end
@@ -63,11 +65,18 @@ object MainForm: TMainForm
       ParentFont = False
       Transparent = True
       Layout = tlCenter
+      OnDblClick = LogOptionClick
       OnMouseDown = FormMouseDown
     end
   end
   object PopupMenu: TPopupMenu
+    Alignment = paCenter
     Left = 56
+    object LogOption: TMenuItem
+      Caption = 'Show Log'
+      Default = True
+      OnClick = LogOptionClick
+    end
     object ExitOption: TMenuItem
       Caption = 'Exit'
       OnClick = ExitOptionClick

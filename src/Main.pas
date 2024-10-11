@@ -4,7 +4,7 @@ interface
 
 uses
   StdCtrls, ExtCtrls, Controls, Classes, Windows, Forms, Dialogs, Messages,
-  SysUtils, StrUtils, Math, Graphics, Menus, Ping;
+  SysUtils, StrUtils, Math, Graphics, Menus, Auxiliary, Ping;
 
 type
   TPingThread = class(TThread)
@@ -17,19 +17,23 @@ type
     PingFrame: TShape;
     PingLabel: TLabel;
     PopupMenu: TPopupMenu;
+    LogOption: TMenuItem;
     ExitOption: TMenuItem;
     InspectGrid: TPaintBox;
     procedure FormCreate(Sender: TObject);
     procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure LogOptionClick(Sender: TObject);
     procedure ExitOptionClick(Sender: TObject);
     procedure InspectGridPaint(Sender: TObject);
   private
     GridColors: Array[1..16] of TColor;
-    procedure UpdatePing(Time: Word; Failure: Boolean);
+    procedure UpdatePing(PingReply: TPingReply);
     procedure UpdateInspectGrid(Color: TColor = clNone);
     procedure DragMove;
     procedure FixFormLocation;
+  public
+    procedure ToggleAuxiliaryForm;
   end;
 
 const
@@ -71,6 +75,11 @@ begin
 
   if (Button = mbLeft) then
     DragMove;
+end;
+
+procedure TMainForm.LogOptionClick(Sender: TObject);
+begin
+  ToggleAuxiliaryForm;
 end;
 
 procedure TMainForm.ExitOptionClick(Sender: TObject);
@@ -117,18 +126,19 @@ procedure TPingThread.Execute;
 var
   PingReply: TPingReply;
   PingTotal: Cardinal;
-  PingMax: Word;
+  PingMax: TPingReply;
 begin
   while True do
   begin
     PingTotal := 0;
-    PingMax := 0;
+    PingMax.Time := 0;
 
     while True do
     begin
       PingReply := Ping.Send;
 
-      PingMax := Max(PingReply.Time, PingMax);
+      if (PingReply.Failure) or (PingReply.Time > PingMax.Time) then
+        PingMax := PingReply;
 
       Inc(PingTotal, Max(PingReply.Time, PingInterval));
 
@@ -139,16 +149,16 @@ begin
         Break;
     end;
 
-    MainForm.UpdatePing(PingMax, PingReply.Failure);
+    MainForm.UpdatePing(PingMax);
   end;
 end;
 
-procedure TMainForm.UpdatePing(Time: Word; Failure: Boolean);
+procedure TMainForm.UpdatePing(PingReply: TPingReply);
 var
   Color: TColor;
 begin
-  case (Time) of
-    0..19:    Color := IfThen(Failure, Ruby, Green);
+  case (PingReply.Time) of
+    0..19:    Color := IfThen(PingReply.Failure, Ruby, Green);
     20..49:   Color := White;
     50..99:   Color := Yellow;
     100..199: Color := Amber;
@@ -156,10 +166,12 @@ begin
     else      Color := Red;
   end;
 
-  PingLabel.Caption := IfThen(Failure, '!', Format('%d', [Time]));
+  PingLabel.Caption := IfThen(PingReply.Failure, '!', Format('%d', [PingReply.Time]));
 
   PingLabel.Font.Color := Color;
   PingFrame.Pen.Color := Color;
+
+  AuxiliaryForm.AppendLogEntry(PingReply.Result);
 
   UpdateInspectGrid(Color);
 end;
@@ -198,6 +210,15 @@ begin
     MainForm.Top := 0
   else if (MainForm.Top + MainForm.Height > Screen.Height) then
     MainForm.Top := Screen.Height - MainForm.Height;
+end;
+
+procedure TMainForm.ToggleAuxiliaryForm;
+begin
+  AuxiliaryForm.Visible := not AuxiliaryForm.Visible;
+  MainForm.BringToFront;
+
+  AuxiliaryForm.LogOption.Checked := AuxiliaryForm.Visible;
+  LogOption.Checked := AuxiliaryForm.Visible;
 end;
 
 end.
