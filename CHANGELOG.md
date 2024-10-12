@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7 Window Snap (2024-10-12)
++ Added the ability to snap the Main form to the edge of the screen
+* Bound the Auxiliary form to the Main form using a permanent snap
+* Linked the positions of the Auxiliary form and Inspect Grid to the position of the Main form
+
 ## 1.6 Ping Log (2024-10-11)
 + Created the Auxiliary form displaying detailed information about recent ICMP echo replies
 

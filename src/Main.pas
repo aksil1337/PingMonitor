@@ -32,6 +32,8 @@ type
     procedure UpdateInspectGrid(Color: TColor = clNone);
     procedure DragMove;
     procedure FixFormLocation;
+  protected
+    procedure WindowPositionChanged(var Msg: TWMWindowPosChanged); message WM_WINDOWPOSCHANGED;
   public
     procedure ToggleAuxiliaryForm;
   end;
@@ -59,8 +61,8 @@ implementation
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
-  MainForm.ClientHeight := 27;
-  MainForm.ClientWidth := 49;
+  ClientHeight := 27;
+  ClientWidth := 49;
 
   Ping := TPing.Create('dns.google');
 
@@ -71,7 +73,7 @@ end;
 procedure TMainForm.FormMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  MainForm.ActiveControl := nil;
+  ActiveControl := nil;
 
   if (Button = mbLeft) then
     DragMove;
@@ -118,6 +120,34 @@ begin
       Break;
     end;
   end;
+end;
+
+{ Messages }
+
+procedure TMainForm.WindowPositionChanged(var Msg: TWMWindowPosChanged);
+begin
+  inherited;
+
+  if not (Assigned(AuxiliaryForm)) then
+    Exit;
+
+  if (Top + Height div 2 < Screen.Height div 2) then
+  begin
+    PingPanel.Top := 0;
+    InspectGrid.Top := 24;
+    AuxiliaryForm.Top := Top - 1 + Height;
+  end
+  else
+  begin
+    PingPanel.Top := 3;
+    InspectGrid.Top := 1;
+    AuxiliaryForm.Top := Top + 1 - AuxiliaryForm.Height;
+  end;
+
+  if (Left + Width div 2 < Screen.Width div 2) then
+    AuxiliaryForm.Left := Left
+  else
+    AuxiliaryForm.Left := Left + Width - AuxiliaryForm.Width;
 end;
 
 { Methods }
@@ -201,15 +231,15 @@ end;
 
 procedure TMainForm.FixFormLocation;
 begin
-  if (MainForm.Left < 0) then
-    MainForm.Left := 0
-  else if (MainForm.Left + MainForm.Width > Screen.Width) then
-    MainForm.Left := Screen.Width - MainForm.Width;
+  if (Left < 0) then
+    Left := 0
+  else if (Left + Width > Screen.Width) then
+    Left := Screen.Width - Width;
 
-  if (MainForm.Top < 0) then
-    MainForm.Top := 0
-  else if (MainForm.Top + MainForm.Height > Screen.Height) then
-    MainForm.Top := Screen.Height - MainForm.Height;
+  if (Top < 0) then
+    Top := 0
+  else if (Top + Height > Screen.Height) then
+    Top := Screen.Height - Height;
 end;
 
 procedure TMainForm.ToggleAuxiliaryForm;
