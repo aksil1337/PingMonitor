@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.8 Settings (2024-10-13)
++ Added the Settings class to store configuration inside an INI file
+* Adjusted the color palette to improve visibility and distinguishability of the latency ranges
+
 ## 1.7 Window Snap (2024-10-12)
 + Added the ability to snap the Main form to the edge of the screen
 * Bound the Auxiliary form to the Main form using a permanent snap

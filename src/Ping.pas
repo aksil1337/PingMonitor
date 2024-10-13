@@ -52,15 +52,17 @@ type
     HostName: String;
     Timeout: Cardinal;
     WSAData: TWSAData;
+    function GetHostAddress: PInAddr;
   public
     Initialized: Boolean;
-    constructor Create(const HostName: String; Timeout: Cardinal = 4000);
+    constructor Create(const HostName: String; Timeout: Cardinal);
     destructor Destroy; override;
-    function GetHostAddress: PInAddr;
     function Send: TPingReply;
   end;
 
 implementation
+
+{ Structors }
 
 constructor TPing.Create(const HostName: String; Timeout: Cardinal);
 var
@@ -79,13 +81,15 @@ begin
     WSACleanup;
 end;
 
+{ Methods }
+
 function TPing.GetHostAddress: PInAddr;
 var
   HostEntity: PHostEnt;
 begin
   HostEntity := GetHostByName(PChar(HostName));
 
-  if (HostEntity <> nil) and (HostEntity.H_AddrType = AF_INET) then
+  if (Assigned(HostEntity)) and (HostEntity.H_AddrType = AF_INET) then
     Result := PInAddr(HostEntity.H_Addr^)
   else
     Result := nil;

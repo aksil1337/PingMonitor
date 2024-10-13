@@ -4,7 +4,8 @@ uses
   Windows, Forms,
   Main in 'Main.pas' {MainForm},
   Auxiliary in 'Auxiliary.pas' {AuxiliaryForm},
-  Ping in 'Ping.pas';
+  Ping in 'Ping.pas',
+  Settings in 'Settings.pas';
 
 {$R *.res}
 {$R Icon.res}

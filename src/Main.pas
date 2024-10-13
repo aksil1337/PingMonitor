@@ -4,7 +4,7 @@ interface
 
 uses
   StdCtrls, ExtCtrls, Controls, Classes, Windows, Forms, Dialogs, Messages,
-  SysUtils, StrUtils, Math, Graphics, Menus, Auxiliary, Ping;
+  SysUtils, StrUtils, Math, Graphics, Menus, Auxiliary, Ping, Settings;
 
 type
   TPingThread = class(TThread)
@@ -27,9 +27,9 @@ type
     procedure ExitOptionClick(Sender: TObject);
     procedure InspectGridPaint(Sender: TObject);
   private
-    GridColors: Array[1..16] of TColor;
+    PingReplies: Array[1..16] of TPingReply;
     procedure UpdatePing(PingReply: TPingReply);
-    procedure UpdateInspectGrid(Color: TColor = clNone);
+    procedure UpdateInspectGrid(PingReply: TPingReply);
     procedure DragMove;
     procedure FixFormLocation;
   protected
@@ -38,20 +38,10 @@ type
     procedure ToggleAuxiliaryForm;
   end;
 
-const
-  Green  = TColor($B8F8D8); { #d8f8b8 }
-  White  = TColor($F8F8F8); { #f8f8f8 }
-  Yellow = TColor($38E8F8); { #f8e838 }
-  Amber  = TColor($48B8F8); { #f8b848 }
-  Orange = TColor($0888F8); { #f88808 }
-  Red    = TColor($2828D8); { #d82828 }
-  Ruby   = TColor($0808A8); { #a80808 }
-
-  PingInterval = 250;
-
 var
   MainForm: TMainForm;
   Ping: TPing;
+  Settings: TSettings;
 
 implementation
 
@@ -61,10 +51,11 @@ implementation
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
-  ClientHeight := 27;
   ClientWidth := 49;
 
-  Ping := TPing.Create('dns.google');
+  Settings := TSettings.Create(ChangeFileExt(Application.ExeName, '.ini'));
+
+  Ping := TPing.Create(Config.Ping.HostName, Config.Ping.Timeout);
 
   if (Ping.Initialized) then
     TPingThread.Create(false);
@@ -91,32 +82,26 @@ end;
 
 procedure TMainForm.InspectGridPaint(Sender: TObject);
 var
-  I, P, W: Byte;
+  I: Byte;
+  Position, Width: Byte;
+  Color: TColor;
 begin
-  P := 0;
-  W := 0;
+  Position := 0;
 
   for I := 1 to 16 do
   begin
-    case (GridColors[I]) of
-      Green:  W := 2;
-      White:  W := 3;
-      Yellow: W := 4;
-      Amber:  W := 5;
-      Orange: W := 6;
-      Red:    W := 7;
-      Ruby:   W := 7;
-    end;
+    Width := Settings.GetPingWidth(PingReplies[I]);
+    Color := Settings.GetPingColor(PingReplies[I]);
 
-    InspectGrid.Canvas.Pen.Color := GridColors[I];
-    InspectGrid.Canvas.Brush.Color := GridColors[I];
-    InspectGrid.Canvas.Rectangle(P, 0, P + W, 2);
+    InspectGrid.Canvas.Pen.Color := Color;
+    InspectGrid.Canvas.Brush.Color := Color;
+    InspectGrid.Canvas.Rectangle(Position, 0, Position + Width, 2);
 
-    P := P + W + 1;
+    Position := Position + Width + 1;
 
-    if (P >= InspectGrid.Width) then
+    if (Position >= InspectGrid.Width) then
     begin
-      InspectGrid.Canvas.Rectangle(P - 1, 0, P + 1, 2);
+      InspectGrid.Canvas.Rectangle(Position - 1, 0, Position + 1, 2);
       Break;
     end;
   end;
@@ -170,12 +155,15 @@ begin
       if (PingReply.Failure) or (PingReply.Time > PingMax.Time) then
         PingMax := PingReply;
 
-      Inc(PingTotal, Max(PingReply.Time, PingInterval));
+      Inc(PingTotal, Max(PingReply.Time, Config.Ping.PollingInterval));
 
-      if (PingReply.Time < PingInterval) then
-        Sleep(IfThen(PingReply.Failure, 1000, PingInterval - PingReply.Time));
+      if (PingReply.Time < Config.Ping.PollingInterval) then
+        if (PingReply.Failure) then
+          Sleep(Config.Ping.RefreshInterval)
+        else
+          Sleep(Config.Ping.PollingInterval - PingReply.Time);
 
-      if (PingReply.Failure) or (PingTotal >= 1000) then
+      if (PingReply.Failure) or (PingTotal >= Config.Ping.RefreshInterval) then
         Break;
     end;
 
@@ -187,36 +175,26 @@ procedure TMainForm.UpdatePing(PingReply: TPingReply);
 var
   Color: TColor;
 begin
-  case (PingReply.Time) of
-    0..19:    Color := IfThen(PingReply.Failure, Ruby, Green);
-    20..49:   Color := White;
-    50..99:   Color := Yellow;
-    100..199: Color := Amber;
-    200..999: Color := Orange;
-    else      Color := Red;
-  end;
+  Color := Settings.GetPingColor(PingReply);
 
-  PingLabel.Caption := IfThen(PingReply.Failure, '!', Format('%d', [PingReply.Time]));
+  PingLabel.Caption := IfThen(PingReply.Failure, '!', IntToStr(PingReply.Time));
 
   PingLabel.Font.Color := Color;
   PingFrame.Pen.Color := Color;
 
   AuxiliaryForm.AppendLogEntry(PingReply.Result);
 
-  UpdateInspectGrid(Color);
+  UpdateInspectGrid(PingReply);
 end;
 
-procedure TMainForm.UpdateInspectGrid(Color: TColor);
+procedure TMainForm.UpdateInspectGrid(PingReply: TPingReply);
 var
   I: Byte;
 begin
-  if (Color <> clNone) then
-  begin
-    for I := 16 downto 2 do
-      GridColors[I] := GridColors[I - 1];
+  for I := 16 downto 2 do
+    PingReplies[I] := PingReplies[I - 1];
 
-    GridColors[1] := Color;
-  end;
+  PingReplies[1] := PingReply;
 
   InspectGrid.Invalidate;
 end;
