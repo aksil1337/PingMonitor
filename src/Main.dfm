@@ -15,7 +15,7 @@ object MainForm: TMainForm
   FormStyle = fsStayOnTop
   OldCreateOrder = False
   PopupMenu = PopupMenu
-  Position = poScreenCenter
+  Position = poDefault
   ScreenSnap = True
   OnCreate = FormCreate
   OnDblClick = LogOptionClick

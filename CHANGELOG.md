@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.9 Window Location (2024-10-16)
++ Added the ability to save window location in the INI file
+
 ## 1.8 Settings (2024-10-13)
 + Added the Settings class to store configuration inside an INI file
 * Adjusted the color palette to improve visibility and distinguishability of the latency ranges

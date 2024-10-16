@@ -3,7 +3,7 @@ unit Settings;
 interface
 
 uses
-  Classes, Windows, SysUtils, Graphics, Inifiles, Ping;
+  Classes, Windows, Forms, SysUtils, Graphics, Inifiles, Ping;
 
 type
   TQualitySection = packed record
@@ -23,22 +23,31 @@ type
     PollingInterval: Word;
   end;
 
+  TWindowSection = packed record
+    Left: Word;
+    Top: Word;
+  end;
+
   TConfig = packed record
     Quality: TQualitySection;
     Ping: TPingSection;
+    Window: TWindowSection;
   end;
 
   TSettings = class
   private
     ReadIni: TMemIniFile;
     WriteIni: TIniFile;
-    procedure IniWord(const Section: String; const Ident: String; var Value: Word);
-    procedure IniColor(const Section: String; const Ident: String; var Value: TColor);
-    procedure IniString(const Section: String; const Ident: String; var Value: String);
+    procedure LoadWord(const Section, Ident: String; var Variable: Word);
+    procedure LoadColor(const Section, Ident: String; var Variable: TColor);
+    procedure LoadString(const Section, Ident: String; var Variable: String);
+    procedure SaveWord(const Section, Ident: String; var Variable: Word; Value: Word);
     function ColorToHex(Color: TColor): String;
     function HexToColor(Hex: String): TColor;
   public
     constructor Create(const FileName: String);
+    destructor Destroy; override;
+    procedure SaveWindowLocation(Left, Top: Word);
     function GetPingColor(PingReply: TPingReply): TColor;
     function GetPingWidth(PingReply: TPingReply): Byte;
   end;
@@ -74,67 +83,85 @@ var
 
 implementation
 
+uses
+  Main;
+
 { Structors }
 
 constructor TSettings.Create(const FileName: String);
 begin
   Config := DefaultConfig;
+  Config.Window.Left := Trunc(Screen.Width / 2 - MainForm.Width / 2);
+  Config.Window.Top := Trunc(Screen.Height / 2 - MainForm.Height / 2);
 
   ReadIni := TMemIniFile.Create(FileName);
   WriteIni := TIniFile.Create(FileName);
   TStringList.Create.SaveToFile(FileName);
 
-  IniColor('Quality', 'ExcellentColor', Config.Quality.ExcellentColor);
-  IniColor('Quality', 'GoodColor', Config.Quality.GoodColor);
-  IniColor('Quality', 'FairColor', Config.Quality.FairColor);
-  IniColor('Quality', 'PoorColor', Config.Quality.PoorColor);
-  IniColor('Quality', 'BadColor', Config.Quality.BadColor);
-  IniColor('Quality', 'TerribleColor', Config.Quality.TerribleColor);
-  IniColor('Quality', 'ErrorColor', Config.Quality.ErrorColor);
+  LoadColor('Quality', 'ExcellentColor', Config.Quality.ExcellentColor);
+  LoadColor('Quality', 'GoodColor', Config.Quality.GoodColor);
+  LoadColor('Quality', 'FairColor', Config.Quality.FairColor);
+  LoadColor('Quality', 'PoorColor', Config.Quality.PoorColor);
+  LoadColor('Quality', 'BadColor', Config.Quality.BadColor);
+  LoadColor('Quality', 'TerribleColor', Config.Quality.TerribleColor);
+  LoadColor('Quality', 'ErrorColor', Config.Quality.ErrorColor);
 
-  IniString('Ping', 'HostName', Config.Ping.HostName);
-  IniWord('Ping', 'Timeout', Config.Ping.Timeout);
-  IniWord('Ping', 'RefreshInterval', Config.Ping.RefreshInterval);
-  IniWord('Ping', 'PollingInterval', Config.Ping.PollingInterval);
+  LoadString('Ping', 'HostName', Config.Ping.HostName);
+  LoadWord('Ping', 'Timeout', Config.Ping.Timeout);
+  LoadWord('Ping', 'RefreshInterval', Config.Ping.RefreshInterval);
+  LoadWord('Ping', 'PollingInterval', Config.Ping.PollingInterval);
+
+  LoadWord('Window', 'Left', Config.Window.Left);
+  LoadWord('Window', 'Top', Config.Window.Top);
 
   ReadIni.Free;
+end;
+
+destructor TSettings.Destroy;
+begin
   WriteIni.Free;
 end;
 
 { Methods }
 
-procedure TSettings.IniWord(const Section: String; const Ident: String; var Value: Word);
+procedure TSettings.LoadWord(const Section, Ident: String; var Variable: Word);
 begin
-  Value := ReadIni.ReadInteger(Section, Ident, Value);
-  WriteIni.WriteInteger(Section, Ident, Value);
+  Variable := ReadIni.ReadInteger(Section, Ident, Variable);
+  WriteIni.WriteInteger(Section, Ident, Variable);
 end;
 
-procedure TSettings.IniColor(const Section: String; const Ident: String; var Value: TColor);
+procedure TSettings.LoadColor(const Section, Ident: String; var Variable: TColor);
 var
   Default: TColor;
 begin
-  Default := Value;
+  Default := Variable;
 
   try
-    Value := HexToColor(ReadIni.ReadString(Section, Ident, ColorToHex(Value)));
+    Variable := HexToColor(ReadIni.ReadString(Section, Ident, ColorToHex(Variable)));
   except
-    Value := Default;
+    Variable := Default;
   end;
 
-  WriteIni.WriteString(Section, Ident, ColorToHex(Value));
+  WriteIni.WriteString(Section, Ident, ColorToHex(Variable));
 end;
 
-procedure TSettings.IniString(const Section: String; const Ident: String; var Value: String);
+procedure TSettings.LoadString(const Section, Ident: String; var Variable: String);
 var
   Default: String;
 begin
-  Default := Value;
-  Value := ReadIni.ReadString(Section, Ident, Value);
+  Default := Variable;
+  Variable := ReadIni.ReadString(Section, Ident, Variable);
 
-  if (Value = '') then
-    Value := Default;
+  if (Variable = '') then
+    Variable := Default;
 
-  WriteIni.WriteString(Section, Ident, Value);
+  WriteIni.WriteString(Section, Ident, Variable);
+end;
+
+procedure TSettings.SaveWord(const Section, Ident: String; var Variable: Word; Value: Word);
+begin
+  Variable := Value;
+  WriteIni.WriteInteger(Section, Ident, Variable);
 end;
 
 function TSettings.ColorToHex(Color: TColor): String;
@@ -149,6 +176,12 @@ begin
   Result := RGB(StrToInt('$' + Copy(Hex, 2, 2)),
                 StrToInt('$' + Copy(Hex, 4, 2)),
                 StrToInt('$' + Copy(Hex, 6, 2)));
+end;
+
+procedure TSettings.SaveWindowLocation(Left, Top: Word);
+begin
+  SaveWord('Window', 'Left', Config.Window.Left, Left);
+  SaveWord('Window', 'Top', Config.Window.Top, Top);
 end;
 
 function TSettings.GetPingColor(PingReply: TPingReply): TColor;

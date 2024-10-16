@@ -31,7 +31,7 @@ type
     procedure UpdatePing(PingReply: TPingReply);
     procedure UpdateInspectGrid(PingReply: TPingReply);
     procedure DragMove;
-    procedure FixFormLocation;
+    procedure AdjustAndSaveWindowLocation;
   protected
     procedure WindowPositionChanged(var Msg: TWMWindowPosChanged); message WM_WINDOWPOSCHANGED;
   public
@@ -54,6 +54,11 @@ begin
   ClientWidth := 49;
 
   Settings := TSettings.Create(ChangeFileExt(Application.ExeName, '.ini'));
+
+  Left := Config.Window.Left;
+  Top := Config.Window.Top;
+
+  AdjustAndSaveWindowLocation; 
 
   Ping := TPing.Create(Config.Ping.HostName, Config.Ping.Timeout);
 
@@ -204,10 +209,10 @@ begin
   ReleaseCapture;
   Perform(WM_SYSCOMMAND, $F012, 0);
 
-  FixFormLocation;
+  AdjustAndSaveWindowLocation;
 end;
 
-procedure TMainForm.FixFormLocation;
+procedure TMainForm.AdjustAndSaveWindowLocation;
 begin
   if (Left < 0) then
     Left := 0
@@ -218,6 +223,8 @@ begin
     Top := 0
   else if (Top + Height > Screen.Height) then
     Top := Screen.Height - Height;
+
+  Settings.SaveWindowLocation(Left, Top);
 end;
 
 procedure TMainForm.ToggleAuxiliaryForm;
