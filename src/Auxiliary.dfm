@@ -4,7 +4,7 @@ object AuxiliaryForm: TAuxiliaryForm
   BorderStyle = bsNone
   Caption = 'AuxiliaryForm'
   ClientHeight = 285
-  ClientWidth = 512
+  ClientWidth = 599
   Color = clBlack
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -21,7 +21,7 @@ object AuxiliaryForm: TAuxiliaryForm
   object LogPanel: TPanel
     Left = 1
     Top = 1
-    Width = 510
+    Width = 597
     Height = 283
     BevelOuter = bvNone
     Color = clBlack
@@ -29,10 +29,10 @@ object AuxiliaryForm: TAuxiliaryForm
     object LogMemo: TMemo
       Left = 0
       Top = 0
-      Width = 510
+      Width = 600
       Height = 283
       Cursor = crArrow
-      Align = alClient
+      Align = alLeft
       BorderStyle = bsNone
       Color = 2631720
       Font.Charset = DEFAULT_CHARSET

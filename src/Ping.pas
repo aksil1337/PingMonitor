@@ -3,7 +3,7 @@ unit Ping;
 interface
 
 uses
-  Windows, SysUtils, WinSock;
+  Windows, SysUtils, Math, WinSock;
 
 function IcmpCreateFile: THandle;
          stdcall; external 'iphlpapi.dll';
@@ -45,6 +45,8 @@ type
     Failure: Boolean;
     Result: String;
     Time: Word;
+    Min: Word;
+    Max: Word;
   end;
 
   TPing = class
@@ -52,15 +54,20 @@ type
     HostName: String;
     Timeout: Cardinal;
     WSAData: TWSAData;
+    PingReplies: Array of TPingReply;
     function GetHostAddress: PInAddr;
+    function Send: TPingReply;
   public
     Initialized: Boolean;
     constructor Create(const HostName: String; Timeout: Cardinal);
     destructor Destroy; override;
-    function Send: TPingReply;
+    function Determine: TPingReply;
   end;
 
 implementation
+
+uses
+  Settings;
 
 { Structors }
 
@@ -70,6 +77,8 @@ var
 begin
   Self.HostName := HostName;
   Self.Timeout := Timeout;
+
+  SetLength(PingReplies, Ceil(Config.Ping.RefreshInterval / Config.Ping.PollingInterval));
 
   WSAError := WSAStartup(MakeWord(2, 2), WSAData);
   Initialized := (WSAError = 0);
@@ -98,9 +107,9 @@ end;
 function TPing.Send: TPingReply;
 var
   IcmpHandle: THandle;
-  Request: TIcmpEchoRequest;
-  Reply: PIcmpEchoReply;
-  ReplySize: Cardinal;
+  EchoRequest: TIcmpEchoRequest;
+  EchoReply: PIcmpEchoReply;
+  EchoReplySize: Cardinal;
   PingReply: TPingReply;
 begin
   PingReply.Failure := True;
@@ -112,30 +121,29 @@ begin
     PingReply.Result := 'Invalid ICMP handle'
   else
   begin
-    Request.Address := GetHostAddress;
-    Request.Data := IntToHex(Random(Cardinal($FFFFFFFF)), 32);
-    Request.DataSize := Length(Request.Data);
+    EchoRequest.Address := GetHostAddress;
+    EchoRequest.Data := IntToHex(Random(Cardinal($FFFFFFFF)), 32);
+    EchoRequest.DataSize := Length(EchoRequest.Data);
 
-    if (Request.Address = nil) then
+    if (EchoRequest.Address = nil) then
       PingReply.Result := 'Host not found'
     else
     begin
-      ReplySize := SizeOf(TIcmpEchoReply) + Request.DataSize;
-      GetMem(Reply, ReplySize);
+      EchoReplySize := SizeOf(TIcmpEchoReply) + EchoRequest.DataSize;
+      GetMem(EchoReply, EchoReplySize);
 
-      IcmpSendEcho(IcmpHandle, Request.Address^, PChar(Request.Data),
-                   Request.DataSize, nil, Reply, ReplySize, Timeout);
+      IcmpSendEcho(IcmpHandle, EchoRequest.Address^, PChar(EchoRequest.Data),
+                   EchoRequest.DataSize, nil, EchoReply, EchoReplySize, Timeout);
 
-      case (Reply.Status) of
+      case (EchoReply.Status) of
         0:
         begin
-          PingReply.Time := Reply.RoundTripTime;
+          PingReply.Time := EchoReply.RoundTripTime;
 
-          PingReply.Result := Format('IP=%s Bytes=%d TTL=%d Time=%dms', [
-            Inet_ntoa(TInAddr(Reply.Address)),
-            Reply.DataSize,
-            Reply.Options.TTL,
-            Reply.RoundTripTime
+          PingReply.Result := Format('IP=%s Bytes=%d TTL=%d', [
+            Inet_ntoa(TInAddr(EchoReply.Address)),
+            EchoReply.DataSize,
+            EchoReply.Options.TTL
           ]);
 
           PingReply.Failure := False;
@@ -143,18 +151,75 @@ begin
         11002:
           PingReply.Result := 'Destination network unreachable';
         11010:
+        begin
+          PingReply.Time := Config.Ping.Timeout;
           PingReply.Result := 'Request timed out';
+        end;
         else
-          PingReply.Result := 'General failure: IPStatus=' + IntToStr(Reply.Status);
+          PingReply.Result := 'General failure: IPStatus=' + IntToStr(EchoReply.Status);
       end;
 
-      FreeMem(Reply);
+      FreeMem(EchoReply);
     end;
 
     IcmpCloseHandle(IcmpHandle);
   end;
 
   Result := PingReply;
+end;
+
+function TPing.Determine: TPingReply;
+var
+  PingReply: TPingReply;
+  ElapsedTime: Cardinal;
+  Count: Byte;
+  I, J: Byte;
+begin
+  ElapsedTime := 0;
+  Count := 0;
+
+  while True do
+  begin
+    I := 0;
+
+    PingReply := Send;
+
+    if (PingReply.Failure) then
+      Count := 0
+    else if (Count < Length(PingReplies)) then
+    begin
+      while I < Count do
+      begin
+        if (PingReply.Time < PingReplies[I].Time) then
+        begin
+          for J := Count downto I + 1 do
+            PingReplies[J] := PingReplies[J - 1];
+
+          Break;
+        end;
+
+        Inc(I);
+      end;
+    end;
+
+    PingReplies[I] := PingReply;
+
+    Inc(Count);
+    Inc(ElapsedTime, Max(PingReply.Time, Config.Ping.PollingInterval));
+
+    if (PingReply.Time < Config.Ping.PollingInterval) then
+      if (PingReply.Failure) then
+        Sleep(Config.Ping.RefreshInterval)
+      else
+        Sleep(Config.Ping.PollingInterval - PingReply.Time);
+
+    if (PingReply.Failure) or (ElapsedTime >= Config.Ping.RefreshInterval) then
+      Break;
+  end;
+
+  Result := PingReplies[Count div 2];
+  Result.Min := PingReplies[0].Time;
+  Result.Max := PingReplies[Count - 1].Time;
 end;
 
 end.

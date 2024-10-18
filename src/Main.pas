@@ -27,7 +27,7 @@ type
     procedure ExitOptionClick(Sender: TObject);
     procedure InspectGridPaint(Sender: TObject);
   private
-    PingReplies: Array[1..16] of TPingReply;
+    PingReplies: Array[0..19] of TPingReply;
     procedure UpdatePing(PingReply: TPingReply);
     procedure UpdateInspectGrid(PingReply: TPingReply);
     procedure DragMove;
@@ -58,7 +58,7 @@ begin
   Left := Config.Window.Left;
   Top := Config.Window.Top;
 
-  AdjustAndSaveWindowLocation; 
+  AdjustAndSaveWindowLocation;
 
   Ping := TPing.Create(Config.Ping.HostName, Config.Ping.Timeout);
 
@@ -93,7 +93,7 @@ var
 begin
   Position := 0;
 
-  for I := 1 to 16 do
+  for I := 0 to Min(Length(PingReplies) - 1, LogEntries.Count) do
   begin
     Width := Settings.GetPingWidth(PingReplies[I]);
     Color := Settings.GetPingColor(PingReplies[I]);
@@ -106,7 +106,7 @@ begin
 
     if (Position >= InspectGrid.Width) then
     begin
-      InspectGrid.Canvas.Rectangle(Position - 1, 0, Position + 1, 2);
+      InspectGrid.Canvas.Rectangle(Position - 1, 0, Position, 2);
       Break;
     end;
   end;
@@ -145,34 +145,13 @@ end;
 procedure TPingThread.Execute;
 var
   PingReply: TPingReply;
-  PingTotal: Cardinal;
-  PingMax: TPingReply;
+
 begin
   while True do
   begin
-    PingTotal := 0;
-    PingMax.Time := 0;
+    PingReply := Ping.Determine;
 
-    while True do
-    begin
-      PingReply := Ping.Send;
-
-      if (PingReply.Failure) or (PingReply.Time > PingMax.Time) then
-        PingMax := PingReply;
-
-      Inc(PingTotal, Max(PingReply.Time, Config.Ping.PollingInterval));
-
-      if (PingReply.Time < Config.Ping.PollingInterval) then
-        if (PingReply.Failure) then
-          Sleep(Config.Ping.RefreshInterval)
-        else
-          Sleep(Config.Ping.PollingInterval - PingReply.Time);
-
-      if (PingReply.Failure) or (PingTotal >= Config.Ping.RefreshInterval) then
-        Break;
-    end;
-
-    MainForm.UpdatePing(PingMax);
+    MainForm.UpdatePing(PingReply);
   end;
 end;
 
@@ -187,7 +166,7 @@ begin
   PingLabel.Font.Color := Color;
   PingFrame.Pen.Color := Color;
 
-  AuxiliaryForm.AppendLogEntry(PingReply.Result);
+  AuxiliaryForm.AppendLogEntry(PingReply);
 
   UpdateInspectGrid(PingReply);
 end;
@@ -196,10 +175,10 @@ procedure TMainForm.UpdateInspectGrid(PingReply: TPingReply);
 var
   I: Byte;
 begin
-  for I := 16 downto 2 do
+  for I := Length(PingReplies) - 1 downto 1 do
     PingReplies[I] := PingReplies[I - 1];
 
-  PingReplies[1] := PingReply;
+  PingReplies[0] := PingReply;
 
   InspectGrid.Invalidate;
 end;

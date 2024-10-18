@@ -4,7 +4,7 @@ interface
 
 uses
   StdCtrls, ExtCtrls, ComCtrls, Controls, Classes, Forms, SysUtils, Menus,
-  Clipbrd;
+  Clipbrd, Ping;
 
 type
   TAuxiliaryForm = class(TForm)
@@ -17,14 +17,13 @@ type
     procedure LogMemoEnter(Sender: TObject);
     procedure LogOptionClick(Sender: TObject);
     procedure CopyOptionClick(Sender: TObject);
-  private
-    LogEntries: TStringList;
   public
-    procedure AppendLogEntry(Text: String);
+    procedure AppendLogEntry(PingReply: TPingReply);
   end;
 
 var
   AuxiliaryForm: TAuxiliaryForm;
+  LogEntries: TStringList;
 
 implementation
 
@@ -57,13 +56,23 @@ end;
 
 { Methods }
 
-procedure TAuxiliaryForm.AppendLogEntry(Text: String);
+procedure TAuxiliaryForm.AppendLogEntry(PingReply: TPingReply);
 var
   DateTimeNow: String;
+  LogEntry: String;
 begin
   DateTimeNow := FormatDateTime('yyyy-mm-dd hh:nn:ss.zzz', Now);
 
-  LogEntries.Add(DateTimeNow + ' ' + Text);
+  LogEntry := Format('%s %s', [DateTimeNow, PingReply.Result]);
+
+  if not (PingReply.Failure) then
+    LogEntry := Format('%s Jitter=%dms Time=%dms', [
+      LogEntry,
+      PingReply.Max - PingReply.Min,
+      PingReply.Time
+    ]);
+
+  LogEntries.Add(LogEntry);
 
   if (LogEntries.Count > 20) then
     LogEntries.Delete(0);

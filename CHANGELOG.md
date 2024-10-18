@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.10 Ping Jitter (2024-10-19)
++ Added a mechanism to determine ping jitter and display it in the log
+- Fixed a bug that delayed sending the next ping after a timeout
+
 ## 1.9 Window Location (2024-10-16)
 + Added the ability to save window location in the INI file
 
