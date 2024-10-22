@@ -4,7 +4,7 @@ interface
 
 uses
   StdCtrls, ExtCtrls, Controls, Classes, Windows, Forms, Dialogs, Messages,
-  SysUtils, StrUtils, Math, Graphics, Menus, Auxiliary, Ping, Settings;
+  SysUtils, StrUtils, Graphics, Menus, Ping, Settings;
 
 type
   TPingThread = class(TThread)
@@ -17,33 +17,33 @@ type
     PingFrame: TShape;
     PingLabel: TLabel;
     PopupMenu: TPopupMenu;
-    LogOption: TMenuItem;
+    AuxiliaryOption: TMenuItem;
     ExitOption: TMenuItem;
     InspectGrid: TPaintBox;
     procedure FormCreate(Sender: TObject);
     procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure LogOptionClick(Sender: TObject);
     procedure ExitOptionClick(Sender: TObject);
     procedure InspectGridPaint(Sender: TObject);
+    procedure ToggleAuxiliaryForm(Sender: TObject);
   private
-    PingReplies: Array[0..19] of TPingReply;
     procedure UpdatePing(PingReply: TPingReply);
-    procedure UpdateInspectGrid(PingReply: TPingReply);
     procedure DragMove;
     procedure AdjustAndSaveWindowLocation;
   protected
     procedure WindowPositionChanged(var Msg: TWMWindowPosChanged); message WM_WINDOWPOSCHANGED;
-  public
-    procedure ToggleAuxiliaryForm;
   end;
 
 var
   MainForm: TMainForm;
   Ping: TPing;
   Settings: TSettings;
+  Config: TConfig;
 
 implementation
+
+uses
+  Auxiliary;
 
 {$R *.dfm}
 
@@ -75,11 +75,6 @@ begin
     DragMove;
 end;
 
-procedure TMainForm.LogOptionClick(Sender: TObject);
-begin
-  ToggleAuxiliaryForm;
-end;
-
 procedure TMainForm.ExitOptionClick(Sender: TObject);
 begin
   Application.Terminate;
@@ -88,28 +83,39 @@ end;
 procedure TMainForm.InspectGridPaint(Sender: TObject);
 var
   I: Byte;
-  Position, Width: Byte;
-  Color: TColor;
+  PingColor: TColor;
+  CellLeft, CellWidth: Byte;
 begin
-  Position := 0;
+  if (LogEntries.Count < 1) then
+    Exit;
 
-  for I := 0 to Min(Length(PingReplies) - 1, LogEntries.Count) do
+  CellLeft := 0;
+
+  for I := 0 to LogEntries.Count - 1 do
   begin
-    Width := Settings.GetPingWidth(PingReplies[I]);
-    Color := Settings.GetPingColor(PingReplies[I]);
+    PingColor := Settings.GetPingColor(PingHistory[I]);
+    CellWidth := Settings.GetCellWidth(PingHistory[I]);
 
-    InspectGrid.Canvas.Pen.Color := Color;
-    InspectGrid.Canvas.Brush.Color := Color;
-    InspectGrid.Canvas.Rectangle(Position, 0, Position + Width, 2);
+    InspectGrid.Canvas.Pen.Color := PingColor;
+    InspectGrid.Canvas.Brush.Color := PingColor;
+    InspectGrid.Canvas.Rectangle(CellLeft, 0, CellLeft + CellWidth, 2);
 
-    Position := Position + Width + 1;
+    CellLeft := CellLeft + CellWidth + 1;
 
-    if (Position >= InspectGrid.Width) then
+    if (CellLeft >= InspectGrid.Width) then
     begin
-      InspectGrid.Canvas.Rectangle(Position - 1, 0, Position, 2);
+      InspectGrid.Canvas.Rectangle(CellLeft - 1, 0, CellLeft, 2);
       Break;
     end;
   end;
+end;
+
+procedure TMainForm.ToggleAuxiliaryForm(Sender: TObject);
+begin
+  AuxiliaryForm.Visible := not AuxiliaryForm.Visible;
+  MainForm.BringToFront;
+
+  AuxiliaryOption.Checked := AuxiliaryForm.Visible;
 end;
 
 { Messages }
@@ -145,7 +151,6 @@ end;
 procedure TPingThread.Execute;
 var
   PingReply: TPingReply;
-
 begin
   while True do
   begin
@@ -161,26 +166,20 @@ var
 begin
   Color := Settings.GetPingColor(PingReply);
 
-  PingLabel.Caption := IfThen(PingReply.Failure, '!', IntToStr(PingReply.Time));
+  case (PingReply.Failure) of
+    False: PingLabel.Caption := IntToStr(PingReply.Time);
+    else   PingLabel.Caption := '!';
+  end;
 
   PingLabel.Font.Color := Color;
   PingFrame.Pen.Color := Color;
 
   AuxiliaryForm.AppendLogEntry(PingReply);
 
-  UpdateInspectGrid(PingReply);
-end;
-
-procedure TMainForm.UpdateInspectGrid(PingReply: TPingReply);
-var
-  I: Byte;
-begin
-  for I := Length(PingReplies) - 1 downto 1 do
-    PingReplies[I] := PingReplies[I - 1];
-
-  PingReplies[0] := PingReply;
+  Ping.UpdateHistory(PingReply);
 
   InspectGrid.Invalidate;
+  AuxiliaryForm.ChartArea.Invalidate;
 end;
 
 procedure TMainForm.DragMove;
@@ -204,15 +203,6 @@ begin
     Top := Screen.Height - Height;
 
   Settings.SaveWindowLocation(Left, Top);
-end;
-
-procedure TMainForm.ToggleAuxiliaryForm;
-begin
-  AuxiliaryForm.Visible := not AuxiliaryForm.Visible;
-  MainForm.BringToFront;
-
-  AuxiliaryForm.LogOption.Checked := AuxiliaryForm.Visible;
-  LogOption.Checked := AuxiliaryForm.Visible;
 end;
 
 end.

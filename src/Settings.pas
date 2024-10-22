@@ -28,10 +28,15 @@ type
     Top: Word;
   end;
 
+  TDetailsSection = packed record
+    DisplayLog: Boolean;
+  end;
+
   TConfig = packed record
     Quality: TQualitySection;
     Ping: TPingSection;
     Window: TWindowSection;
+    Details: TDetailsSection;
   end;
 
   TSettings = class
@@ -41,15 +46,18 @@ type
     procedure LoadWord(const Section, Ident: String; var Variable: Word);
     procedure LoadColor(const Section, Ident: String; var Variable: TColor);
     procedure LoadString(const Section, Ident: String; var Variable: String);
+    procedure LoadBoolean(const Section, Ident: String; var Variable: Boolean);
     procedure SaveWord(const Section, Ident: String; var Variable: Word; Value: Word);
+    procedure SaveBoolean(const Section, Ident: String; var Variable: Boolean; Value: Boolean);
     function ColorToHex(Color: TColor): String;
     function HexToColor(Hex: String): TColor;
   public
     constructor Create(const FileName: String);
     destructor Destroy; override;
     procedure SaveWindowLocation(Left, Top: Word);
-    function GetPingColor(PingReply: TPingReply): TColor;
-    function GetPingWidth(PingReply: TPingReply): Byte;
+    procedure SaveDisplayPreferences(Sender: TObject);
+    function GetPingColor(PingReply: TPingReply; PingTime: TPingTime = ptMedian): TColor;
+    function GetCellWidth(PingReply: TPingReply): Byte;
   end;
 
 const
@@ -76,15 +84,15 @@ const
       RefreshInterval: 1000;
       PollingInterval: 250;
     );
+    Details: (
+      DisplayLog: True;
+    );
   );
-
-var
-  Config: TConfig;
 
 implementation
 
 uses
-  Main;
+  Main, Auxiliary;
 
 { Structors }
 
@@ -113,6 +121,8 @@ begin
 
   LoadWord('Window', 'Left', Config.Window.Left);
   LoadWord('Window', 'Top', Config.Window.Top);
+
+  LoadBoolean('Details', 'DisplayLog', Config.Details.DisplayLog);
 
   ReadIni.Free;
 end;
@@ -158,10 +168,22 @@ begin
   WriteIni.WriteString(Section, Ident, Variable);
 end;
 
+procedure TSettings.LoadBoolean(const Section, Ident: String; var Variable: Boolean);
+begin
+  Variable := ReadIni.ReadBool(Section, Ident, Variable);
+  WriteIni.WriteBool(Section, Ident, Variable);
+end;
+
 procedure TSettings.SaveWord(const Section, Ident: String; var Variable: Word; Value: Word);
 begin
   Variable := Value;
   WriteIni.WriteInteger(Section, Ident, Variable);
+end;
+
+procedure TSettings.SaveBoolean(const Section, Ident: String; var Variable: Boolean; Value: Boolean);
+begin
+  Variable := Value;
+  WriteIni.WriteBool(Section, Ident, Variable);
 end;
 
 function TSettings.ColorToHex(Color: TColor): String;
@@ -184,12 +206,25 @@ begin
   SaveWord('Window', 'Top', Config.Window.Top, Top);
 end;
 
-function TSettings.GetPingColor(PingReply: TPingReply): TColor;
+procedure TSettings.SaveDisplayPreferences(Sender: TObject);
 begin
+  SaveBoolean('Details', 'DisplayLog', Config.Details.DisplayLog, Sender = AuxiliaryForm.LogOption);
+end;
+
+function TSettings.GetPingColor(PingReply: TPingReply; PingTime: TPingTime): TColor;
+var
+  Time: Word;
+begin
+  case (PingTime) of
+    ptMin: Time := PingReply.Min;
+    ptMax: Time := PingReply.Max;
+    else   Time := PingReply.Time;
+  end;
+
   if (PingReply.Failure) then
     Result := Config.Quality.ErrorColor
   else
-    case (PingReply.Time) of
+    case (Time) of
       ExcellentPing..GoodPing-1: Result := Config.Quality.ExcellentColor;
       GoodPing..FairPing-1:      Result := Config.Quality.GoodColor;
       FairPing..PoorPing-1:      Result := Config.Quality.FairColor;
@@ -199,7 +234,7 @@ begin
     end;
 end;
 
-function TSettings.GetPingWidth(PingReply: TPingReply): Byte;
+function TSettings.GetCellWidth(PingReply: TPingReply): Byte;
 begin
   if (PingReply.Failure) then
     Result := 7

@@ -41,6 +41,8 @@ type
     Options: TIpOptionInformation;
   end;
 
+  TPingTime = (ptMedian, ptMin, ptMax);
+
   TPingReply = packed record
     Failure: Boolean;
     Result: String;
@@ -62,12 +64,16 @@ type
     constructor Create(const HostName: String; Timeout: Cardinal);
     destructor Destroy; override;
     function Determine: TPingReply;
+    procedure UpdateHistory(PingReply: TPingReply);
   end;
+
+var
+  PingHistory: Array[0..19] of TPingReply;
 
 implementation
 
 uses
-  Settings;
+  Main;
 
 { Structors }
 
@@ -220,6 +226,16 @@ begin
   Result := PingReplies[Count div 2];
   Result.Min := PingReplies[0].Time;
   Result.Max := PingReplies[Count - 1].Time;
+end;
+
+procedure TPing.UpdateHistory(PingReply: TPingReply);
+var
+  I: Byte;
+begin
+  for I := Length(PingHistory) - 1 downto 1 do
+    PingHistory[I] := PingHistory[I - 1];
+
+  PingHistory[0] := PingReply;
 end;
 
 end.

@@ -18,7 +18,7 @@ object MainForm: TMainForm
   Position = poDefault
   ScreenSnap = True
   OnCreate = FormCreate
-  OnDblClick = LogOptionClick
+  OnDblClick = ToggleAuxiliaryForm
   OnMouseDown = FormMouseDown
   PixelsPerInch = 96
   TextHeight = 13
@@ -27,7 +27,7 @@ object MainForm: TMainForm
     Top = 24
     Width = 47
     Height = 2
-    OnDblClick = LogOptionClick
+    OnDblClick = ToggleAuxiliaryForm
     OnMouseDown = FormMouseDown
     OnPaint = InspectGridPaint
   end
@@ -66,17 +66,17 @@ object MainForm: TMainForm
       ParentFont = False
       Transparent = True
       Layout = tlCenter
-      OnDblClick = LogOptionClick
+      OnDblClick = ToggleAuxiliaryForm
       OnMouseDown = FormMouseDown
     end
   end
   object PopupMenu: TPopupMenu
     Alignment = paCenter
     Left = 56
-    object LogOption: TMenuItem
-      Caption = 'Show Log'
+    object AuxiliaryOption: TMenuItem
+      Caption = 'Show Details'
       Default = True
-      OnClick = LogOptionClick
+      OnClick = ToggleAuxiliaryForm
     end
     object ExitOption: TMenuItem
       Caption = 'Exit'

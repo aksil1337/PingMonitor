@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11 Ping Chart (2024-10-22)
++ Added a colorful chart on the Auxiliary form to visually represent the latency and jitter values
+
 ## 1.10 Ping Jitter (2024-10-19)
 + Added a mechanism to determine ping jitter and display it in the log
 - Fixed a bug that delayed sending the next ping after a timeout

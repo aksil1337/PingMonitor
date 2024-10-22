@@ -4,7 +4,7 @@ object AuxiliaryForm: TAuxiliaryForm
   BorderStyle = bsNone
   Caption = 'AuxiliaryForm'
   ClientHeight = 285
-  ClientWidth = 599
+  ClientWidth = 600
   Color = clBlack
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -16,20 +16,21 @@ object AuxiliaryForm: TAuxiliaryForm
   PopupMenu = PopupMenu
   Position = poScreenCenter
   OnCreate = FormCreate
+  OnDblClick = SwapBetweenChartAndLog
   PixelsPerInch = 96
   TextHeight = 13
   object LogPanel: TPanel
     Left = 1
     Top = 1
-    Width = 597
+    Width = 598
     Height = 283
     BevelOuter = bvNone
-    Color = clBlack
+    Color = 2631720
     TabOrder = 0
     object LogMemo: TMemo
       Left = 0
       Top = 0
-      Width = 600
+      Width = 602
       Height = 283
       Cursor = crArrow
       Align = alLeft
@@ -44,17 +45,45 @@ object AuxiliaryForm: TAuxiliaryForm
       ReadOnly = True
       TabOrder = 0
       WordWrap = False
+      OnDblClick = SwapBetweenChartAndLog
       OnEnter = LogMemoEnter
+    end
+  end
+  object ChartPanel: TPanel
+    Left = 1
+    Top = 1
+    Width = 598
+    Height = 283
+    BevelOuter = bvNone
+    Color = 2631720
+    TabOrder = 1
+    object ChartArea: TPaintBox
+      Left = 0
+      Top = 0
+      Width = 598
+      Height = 283
+      Align = alClient
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -9
+      Font.Name = 'Verdana'
+      Font.Style = [fsBold]
+      ParentFont = False
+      OnDblClick = SwapBetweenChartAndLog
+      OnPaint = ChartAreaPaint
     end
   end
   object PopupMenu: TPopupMenu
     Alignment = paCenter
     Left = 9
     Top = 9
+    object ChartOption: TMenuItem
+      Caption = 'Display Chart'
+      OnClick = SwapToChartOrLog
+    end
     object LogOption: TMenuItem
-      Caption = 'Show Log'
-      Default = True
-      OnClick = LogOptionClick
+      Caption = 'Display Log'
+      OnClick = SwapToChartOrLog
     end
     object CopyOption: TMenuItem
       Caption = 'Copy Text'
