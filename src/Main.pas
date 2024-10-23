@@ -113,9 +113,9 @@ end;
 procedure TMainForm.ToggleAuxiliaryForm(Sender: TObject);
 begin
   AuxiliaryForm.Visible := not AuxiliaryForm.Visible;
-  MainForm.BringToFront;
-
   AuxiliaryOption.Checked := AuxiliaryForm.Visible;
+
+  AuxiliaryForm.RedirectFormFocus(Sender);
 end;
 
 { Messages }

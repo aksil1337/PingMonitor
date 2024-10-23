@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.11b Window Visibility Fix (2024-10-23)
+- Fixed a bug that caused the Auxiliary form to disappear when another application gained focus
+
 ## 1.11 Ping Chart (2024-10-22)
 + Added a colorful chart on the Auxiliary form to visually represent the latency and jitter values
 

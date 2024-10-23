@@ -15,6 +15,7 @@ object AuxiliaryForm: TAuxiliaryForm
   OldCreateOrder = False
   PopupMenu = PopupMenu
   Position = poScreenCenter
+  OnClick = RedirectFormFocus
   OnCreate = FormCreate
   OnDblClick = SwapBetweenChartAndLog
   PixelsPerInch = 96
@@ -45,6 +46,7 @@ object AuxiliaryForm: TAuxiliaryForm
       ReadOnly = True
       TabOrder = 0
       WordWrap = False
+      OnClick = RedirectFormFocus
       OnDblClick = SwapBetweenChartAndLog
       OnEnter = LogMemoEnter
     end
@@ -69,12 +71,14 @@ object AuxiliaryForm: TAuxiliaryForm
       Font.Name = 'Verdana'
       Font.Style = [fsBold]
       ParentFont = False
+      OnClick = RedirectFormFocus
       OnDblClick = SwapBetweenChartAndLog
       OnPaint = ChartAreaPaint
     end
   end
   object PopupMenu: TPopupMenu
     Alignment = paCenter
+    OnPopup = RedirectFormFocus
     Left = 9
     Top = 9
     object ChartOption: TMenuItem

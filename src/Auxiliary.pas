@@ -17,6 +17,7 @@ type
     LogOption: TMenuItem;
     CopyOption: TMenuItem;
     procedure FormCreate(Sender: TObject);
+    procedure RedirectFormFocus(Sender: TObject);
     procedure LogMemoEnter(Sender: TObject);
     procedure CopyOptionClick(Sender: TObject);
     procedure ChartAreaPaint(Sender: TObject);
@@ -54,6 +55,15 @@ begin
     SwapToChartOrLog(ChartOption);
 end;
 
+procedure TAuxiliaryForm.RedirectFormFocus(Sender: TObject);
+begin
+  if (MainForm.Visible) then
+  begin
+    MainForm.SetFocus;
+    MainForm.BringToFront;
+  end;
+end;
+
 procedure TAuxiliaryForm.LogMemoEnter(Sender: TObject);
 begin
   LogPanel.SetFocus;
@@ -62,6 +72,8 @@ end;
 procedure TAuxiliaryForm.CopyOptionClick(Sender: TObject);
 begin
   Clipboard.AsText := LogEntries.Text;
+
+  RedirectFormFocus(Sender);
 end;
 
 procedure TAuxiliaryForm.ChartAreaPaint(Sender: TObject);
@@ -150,6 +162,8 @@ begin
   LogOption.Default := not LogPanel.Visible;
 
   Settings.SaveDisplayPreferences(Sender);
+
+  RedirectFormFocus(Sender);
 end;
 
 procedure TAuxiliaryForm.SwapBetweenChartAndLog(Sender: TObject);
@@ -158,6 +172,8 @@ begin
     SwapToChartOrLog(LogOption)
   else
     SwapToChartOrLog(ChartOption);
+
+  RedirectFormFocus(Sender);
 end;
 
 { Methods }
