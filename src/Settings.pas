@@ -23,6 +23,10 @@ type
     PollingInterval: Word;
   end;
 
+  TApplicationSection = packed record
+    RunInTray: Boolean;
+  end;
+
   TWindowSection = packed record
     Left: Word;
     Top: Word;
@@ -35,6 +39,7 @@ type
   TConfig = packed record
     Quality: TQualitySection;
     Ping: TPingSection;
+    Application: TApplicationSection;
     Window: TWindowSection;
     Details: TDetailsSection;
   end;
@@ -55,7 +60,8 @@ type
     constructor Create(const FileName: String);
     destructor Destroy; override;
     procedure SaveWindowLocation(Left, Top: Word);
-    procedure SaveDisplayPreferences(Sender: TObject);
+    procedure SaveDisplayPreferences(DisplayLog: Boolean);
+    procedure SaveTrayPreferences(RunInTray: Boolean);
     function GetPingColor(PingReply: TPingReply; PingTime: TPingTime = ptMedian): TColor;
     function GetCellWidth(PingReply: TPingReply): Byte;
   end;
@@ -83,6 +89,9 @@ const
       Timeout: 4000;
       RefreshInterval: 1000;
       PollingInterval: 250;
+    );
+    Application: (
+      RunInTray: True;
     );
     Details: (
       DisplayLog: True;
@@ -118,6 +127,8 @@ begin
   LoadWord('Ping', 'Timeout', Config.Ping.Timeout);
   LoadWord('Ping', 'RefreshInterval', Config.Ping.RefreshInterval);
   LoadWord('Ping', 'PollingInterval', Config.Ping.PollingInterval);
+
+  LoadBoolean('Application', 'RunInTray', Config.Application.RunInTray);
 
   LoadWord('Window', 'Left', Config.Window.Left);
   LoadWord('Window', 'Top', Config.Window.Top);
@@ -206,9 +217,14 @@ begin
   SaveWord('Window', 'Top', Config.Window.Top, Top);
 end;
 
-procedure TSettings.SaveDisplayPreferences(Sender: TObject);
+procedure TSettings.SaveDisplayPreferences(DisplayLog: Boolean);
 begin
-  SaveBoolean('Details', 'DisplayLog', Config.Details.DisplayLog, Sender = AuxiliaryForm.LogOption);
+  SaveBoolean('Details', 'DisplayLog', Config.Details.DisplayLog, DisplayLog);
+end;
+
+procedure TSettings.SaveTrayPreferences(RunInTray: Boolean);
+begin
+  SaveBoolean('Application', 'RunInTray', Config.Application.RunInTray, RunInTray);
 end;
 
 function TSettings.GetPingColor(PingReply: TPingReply; PingTime: TPingTime): TColor;

@@ -1,11 +1,13 @@
 program PingMonitor;
 
 uses
-  Windows, Forms,
+  Windows,
+  Forms,
   Main in 'Main.pas' {MainForm},
   Auxiliary in 'Auxiliary.pas' {AuxiliaryForm},
   Ping in 'Ping.pas',
-  Settings in 'Settings.pas';
+  Settings in 'Settings.pas',
+  Tray in 'Tray.pas';
 
 {$R *.res}
 {$R Icon.res}

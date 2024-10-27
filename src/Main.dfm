@@ -17,8 +17,10 @@ object MainForm: TMainForm
   PopupMenu = PopupMenu
   Position = poDefault
   ScreenSnap = True
+  OnActivate = FormActivate
   OnCreate = FormCreate
   OnDblClick = ToggleAuxiliaryForm
+  OnDestroy = FormDestroy
   OnMouseDown = FormMouseDown
   PixelsPerInch = 96
   TextHeight = 13
@@ -77,6 +79,10 @@ object MainForm: TMainForm
       Caption = 'Show Details'
       Default = True
       OnClick = ToggleAuxiliaryForm
+    end
+    object TrayOption: TMenuItem
+      Caption = 'Run in System Tray'
+      OnClick = ToggleTrayIcon
     end
     object ExitOption: TMenuItem
       Caption = 'Exit'

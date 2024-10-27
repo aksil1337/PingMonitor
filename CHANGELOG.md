@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.12 Tray Icon (2024-10-27)
++ Created the Tray unit to allow running the application in the system tray without displaying it in the taskbar
+
 ## 1.11b Window Visibility Fix (2024-10-23)
 - Fixed a bug that caused the Auxiliary form to disappear when another application gained focus
 

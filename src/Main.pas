@@ -4,7 +4,7 @@ interface
 
 uses
   StdCtrls, ExtCtrls, Controls, Classes, Windows, Forms, Dialogs, Messages,
-  SysUtils, StrUtils, Graphics, Menus, Ping, Settings;
+  SysUtils, StrUtils, Graphics, Menus, Ping, Settings, Tray;
 
 type
   TPingThread = class(TThread)
@@ -18,14 +18,18 @@ type
     PingLabel: TLabel;
     PopupMenu: TPopupMenu;
     AuxiliaryOption: TMenuItem;
+    TrayOption: TMenuItem;
     ExitOption: TMenuItem;
     InspectGrid: TPaintBox;
     procedure FormCreate(Sender: TObject);
+    procedure FormActivate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure FormMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ExitOptionClick(Sender: TObject);
     procedure InspectGridPaint(Sender: TObject);
     procedure ToggleAuxiliaryForm(Sender: TObject);
+    procedure ToggleTrayIcon(Sender: TObject = nil);
   private
     procedure UpdatePing(PingReply: TPingReply);
     procedure DragMove;
@@ -39,6 +43,7 @@ var
   Ping: TPing;
   Settings: TSettings;
   Config: TConfig;
+  TrayIcon: TTrayIcon;
 
 implementation
 
@@ -60,10 +65,23 @@ begin
 
   AdjustAndSaveWindowLocation;
 
+  TrayIcon := TTrayIcon.Create(PopupMenu);
+
   Ping := TPing.Create(Config.Ping.HostName, Config.Ping.Timeout);
 
   if (Ping.Initialized) then
     TPingThread.Create(false);
+end;
+
+procedure TMainForm.FormActivate(Sender: TObject);
+begin
+  if (Config.Application.RunInTray <> TrayIcon.Visible) then
+    ToggleTrayIcon;
+end;
+
+procedure TMainForm.FormDestroy(Sender: TObject);
+begin
+  TrayIcon.Destroy;
 end;
 
 procedure TMainForm.FormMouseDown(Sender: TObject; Button: TMouseButton;
@@ -115,7 +133,15 @@ begin
   AuxiliaryForm.Visible := not AuxiliaryForm.Visible;
   AuxiliaryOption.Checked := AuxiliaryForm.Visible;
 
-  AuxiliaryForm.RedirectFormFocus(Sender);
+  AuxiliaryForm.RedirectFormFocus;
+end;
+
+procedure TMainForm.ToggleTrayIcon(Sender: TObject);
+begin
+  TrayIcon.Visible := not TrayIcon.Visible;
+  TrayOption.Checked := TrayIcon.Visible;
+
+  Settings.SaveTrayPreferences(TrayIcon.Visible);
 end;
 
 { Messages }
