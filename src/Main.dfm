@@ -84,6 +84,10 @@ object MainForm: TMainForm
       Caption = 'Run in System Tray'
       OnClick = ToggleTrayIcon
     end
+    object StartupOption: TMenuItem
+      Caption = 'Run at System Startup'
+      OnClick = ToggleAutomaticStartup
+    end
     object ExitOption: TMenuItem
       Caption = 'Exit'
       OnClick = ExitOptionClick

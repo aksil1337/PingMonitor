@@ -19,6 +19,7 @@ type
     PopupMenu: TPopupMenu;
     AuxiliaryOption: TMenuItem;
     TrayOption: TMenuItem;
+    StartupOption: TMenuItem;
     ExitOption: TMenuItem;
     InspectGrid: TPaintBox;
     procedure FormCreate(Sender: TObject);
@@ -30,6 +31,7 @@ type
     procedure InspectGridPaint(Sender: TObject);
     procedure ToggleAuxiliaryForm(Sender: TObject);
     procedure ToggleTrayIcon(Sender: TObject = nil);
+    procedure ToggleAutomaticStartup(Sender: TObject = nil);
   private
     procedure UpdatePing(PingReply: TPingReply);
     procedure DragMove;
@@ -58,7 +60,7 @@ procedure TMainForm.FormCreate(Sender: TObject);
 begin
   ClientWidth := 49;
 
-  Settings := TSettings.Create(ChangeFileExt(Application.ExeName, '.ini'));
+  Settings := TSettings.Create;
 
   Left := Config.Window.Left;
   Top := Config.Window.Top;
@@ -77,6 +79,9 @@ procedure TMainForm.FormActivate(Sender: TObject);
 begin
   if (Config.Application.RunInTray <> TrayIcon.Visible) then
     ToggleTrayIcon;
+
+  if (Config.Application.RunAtStartup <> StartupOption.Checked) then
+    ToggleAutomaticStartup;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -142,6 +147,18 @@ begin
   TrayOption.Checked := TrayIcon.Visible;
 
   Settings.SaveTrayPreferences(TrayIcon.Visible);
+end;
+
+procedure TMainForm.ToggleAutomaticStartup(Sender: TObject);
+var
+  RunAtStartup: Boolean;
+begin
+  if (Sender = StartupOption) then
+    RunAtStartup := not StartupOption.Checked
+  else
+    RunAtStartup := Config.Application.RunAtStartup;
+
+  StartupOption.Checked := Settings.SaveStartupPreferences(RunAtStartup);
 end;
 
 { Messages }

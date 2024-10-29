@@ -3,7 +3,7 @@ unit Settings;
 interface
 
 uses
-  Classes, Windows, Forms, SysUtils, Graphics, Inifiles, Ping;
+  Classes, Windows, Forms, SysUtils, Graphics, Registry, Inifiles, Ping;
 
 type
   TQualitySection = packed record
@@ -25,6 +25,7 @@ type
 
   TApplicationSection = packed record
     RunInTray: Boolean;
+    RunAtStartup: Boolean;
   end;
 
   TWindowSection = packed record
@@ -46,27 +47,31 @@ type
 
   TSettings = class
   private
+    Registry: TRegistry;
     ReadIni: TMemIniFile;
     WriteIni: TIniFile;
     procedure LoadWord(const Section, Ident: String; var Variable: Word);
+    procedure SaveWord(const Section, Ident: String; var Variable: Word; Value: Word);
     procedure LoadColor(const Section, Ident: String; var Variable: TColor);
     procedure LoadString(const Section, Ident: String; var Variable: String);
     procedure LoadBoolean(const Section, Ident: String; var Variable: Boolean);
-    procedure SaveWord(const Section, Ident: String; var Variable: Word; Value: Word);
     procedure SaveBoolean(const Section, Ident: String; var Variable: Boolean; Value: Boolean);
     function ColorToHex(Color: TColor): String;
     function HexToColor(Hex: String): TColor;
   public
-    constructor Create(const FileName: String);
+    constructor Create;
     destructor Destroy; override;
     procedure SaveWindowLocation(Left, Top: Word);
     procedure SaveDisplayPreferences(DisplayLog: Boolean);
     procedure SaveTrayPreferences(RunInTray: Boolean);
+    function SaveStartupPreferences(RunAtStartup: Boolean): Boolean;
     function GetPingColor(PingReply: TPingReply; PingTime: TPingTime = ptMedian): TColor;
     function GetCellWidth(PingReply: TPingReply): Byte;
   end;
 
 const
+  StartupRegistryKey = 'Software\Microsoft\Windows\CurrentVersion\Run';
+
   ExcellentPing = 0;
   GoodPing      = 20;
   FairPing      = 50;
@@ -92,6 +97,7 @@ const
     );
     Application: (
       RunInTray: True;
+      RunAtStartup: False;
     );
     Details: (
       DisplayLog: True;
@@ -105,15 +111,22 @@ uses
 
 { Structors }
 
-constructor TSettings.Create(const FileName: String);
+constructor TSettings.Create;
+var
+  IniPath: String;
 begin
   Config := DefaultConfig;
   Config.Window.Left := Trunc(Screen.Width / 2 - MainForm.Width / 2);
   Config.Window.Top := Trunc(Screen.Height / 2 - MainForm.Height / 2);
 
-  ReadIni := TMemIniFile.Create(FileName);
-  WriteIni := TIniFile.Create(FileName);
-  TStringList.Create.SaveToFile(FileName);
+  Registry := TRegistry.Create;
+  Registry.RootKey := HKEY_CURRENT_USER;
+
+  IniPath := ChangeFileExt(Application.ExeName, '.ini');
+
+  ReadIni := TMemIniFile.Create(IniPath);
+  WriteIni := TIniFile.Create(IniPath);
+  TStringList.Create.SaveToFile(IniPath);
 
   LoadColor('Quality', 'ExcellentColor', Config.Quality.ExcellentColor);
   LoadColor('Quality', 'GoodColor', Config.Quality.GoodColor);
@@ -129,11 +142,14 @@ begin
   LoadWord('Ping', 'PollingInterval', Config.Ping.PollingInterval);
 
   LoadBoolean('Application', 'RunInTray', Config.Application.RunInTray);
+  LoadBoolean('Application', 'RunAtStartup', Config.Application.RunAtStartup);
 
   LoadWord('Window', 'Left', Config.Window.Left);
   LoadWord('Window', 'Top', Config.Window.Top);
 
   LoadBoolean('Details', 'DisplayLog', Config.Details.DisplayLog);
+
+  SaveStartupPreferences(Config.Application.RunAtStartup);
 
   ReadIni.Free;
 end;
@@ -141,6 +157,7 @@ end;
 destructor TSettings.Destroy;
 begin
   WriteIni.Free;
+  Registry.Free;
 end;
 
 { Methods }
@@ -148,6 +165,12 @@ end;
 procedure TSettings.LoadWord(const Section, Ident: String; var Variable: Word);
 begin
   Variable := ReadIni.ReadInteger(Section, Ident, Variable);
+  WriteIni.WriteInteger(Section, Ident, Variable);
+end;
+
+procedure TSettings.SaveWord(const Section, Ident: String; var Variable: Word; Value: Word);
+begin
+  Variable := Value;
   WriteIni.WriteInteger(Section, Ident, Variable);
 end;
 
@@ -185,12 +208,6 @@ begin
   WriteIni.WriteBool(Section, Ident, Variable);
 end;
 
-procedure TSettings.SaveWord(const Section, Ident: String; var Variable: Word; Value: Word);
-begin
-  Variable := Value;
-  WriteIni.WriteInteger(Section, Ident, Variable);
-end;
-
 procedure TSettings.SaveBoolean(const Section, Ident: String; var Variable: Boolean; Value: Boolean);
 begin
   Variable := Value;
@@ -225,6 +242,40 @@ end;
 procedure TSettings.SaveTrayPreferences(RunInTray: Boolean);
 begin
   SaveBoolean('Application', 'RunInTray', Config.Application.RunInTray, RunInTray);
+end;
+
+function TSettings.SaveStartupPreferences(RunAtStartup: Boolean): Boolean;
+var
+  ApplicationPath: String;
+
+  function RegistryRunAtStartup: Boolean;
+  begin
+    Result := (Registry.ReadString(Application.Title) = ApplicationPath);
+  end;
+begin
+  ApplicationPath := Format('"%s"', [Application.ExeName]);
+
+  if Registry.OpenKey(StartupRegistryKey, False) then
+  begin
+    Result := RegistryRunAtStartup;
+
+    if (Result <> RunAtStartup) then
+    begin
+      if (RunAtStartup) then
+        Registry.WriteString(Application.Title, ApplicationPath)
+      else
+        Registry.DeleteValue(Application.Title);
+
+      Result := RegistryRunAtStartup;
+    end;
+
+    Registry.CloseKey;
+  end
+  else
+    Result := False;
+
+  if (Config.Application.RunAtStartup <> Result) then
+    SaveBoolean('Application', 'RunAtStartup', Config.Application.RunAtStartup, Result);
 end;
 
 function TSettings.GetPingColor(PingReply: TPingReply; PingTime: TPingTime): TColor;

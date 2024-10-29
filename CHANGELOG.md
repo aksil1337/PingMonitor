@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.13 Automatic Startup (2024-10-29)
++ Added an option to automatically run the application at system startup
+
 ## 1.12 Tray Icon (2024-10-27)
 + Created the Tray unit to allow running the application in the system tray without displaying it in the taskbar
 
