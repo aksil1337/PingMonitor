@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.13b Shutdown Fix (2024-10-30)
+- Fixed a bug that prevented Windows from shutting down while the application is running
+
 ## 1.13 Automatic Startup (2024-10-29)
 + Added an option to automatically run the application at system startup
 

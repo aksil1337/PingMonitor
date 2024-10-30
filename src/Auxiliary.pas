@@ -27,14 +27,14 @@ type
     procedure AppendLogEntry(PingReply: TPingReply);
   end;
 
-var
-  AuxiliaryForm: TAuxiliaryForm;
-  LogEntries: TStringList;
-
 const
   BarWidth = 28;
   JitterWidth = 8;
   BarGap = 2;
+
+var
+  AuxiliaryForm: TAuxiliaryForm;
+  LogEntries: TStringList;
 
 implementation
 
@@ -162,6 +162,8 @@ begin
 
   LogOption.Checked := LogPanel.Visible;
   LogOption.Default := not LogPanel.Visible;
+
+  AuxiliaryForm.Caption := Application.Title + #32 + TMenuItem(Sender).Hint;
 
   Settings.SaveDisplayPreferences(Sender = LogOption);
 

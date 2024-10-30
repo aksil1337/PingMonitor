@@ -6,9 +6,6 @@ uses
   Controls, Classes, Windows, Forms, Messages, SysUtils, Graphics, Menus,
   ShellApi;
 
-const
-  WM_NOTIFYICON = WM_USER + 1337;
-
 type
   TTrayIcon = class
   private
@@ -16,13 +13,17 @@ type
     IsVisible: Boolean;
     PopupMenu: TPopupMenu;
     IconData: TNotifyIconData;
-    procedure MessageReceived(var Msg: TMessage);
     procedure SetVisible(Value: Boolean);
+  protected
+    procedure MessageReceived(var Msg: TMessage);
   public
     constructor Create(PopupMenu: TPopupMenu);
     destructor Destroy; override;
     property Visible: Boolean read IsVisible write SetVisible default False;
   end;
+
+const
+  WM_NOTIFYICON = WM_USER + 1337;
 
 implementation
 
@@ -58,16 +59,23 @@ procedure TTrayIcon.MessageReceived(var Msg: TMessage);
 var
   I: Integer;
 begin
-  case (Msg.LParam) of
-    WM_LBUTTONDBLCLK:
-      for I := 0 to PopupMenu.Items.Count - 1 do
-        if (PopupMenu.Items[I].Default) then
-          PopupMenu.Items[I].Click;
-    WM_RBUTTONDOWN:
-    begin
-      SetForegroundWindow(Application.MainForm.Handle);
-      PopupMenu.Popup(Mouse.CursorPos.X, Mouse.CursorPos.Y);
-    end;
+  case (Msg.Msg) of
+    WM_NOTIFYICON:
+      case (Msg.LParam) of
+        WM_LBUTTONDBLCLK:
+          for I := 0 to PopupMenu.Items.Count - 1 do
+            if (PopupMenu.Items[I].Default) then
+              PopupMenu.Items[I].Click;
+        WM_RBUTTONDOWN:
+        begin
+          SetForegroundWindow(Application.MainForm.Handle);
+          PopupMenu.Popup(Mouse.CursorPos.X, Mouse.CursorPos.Y);
+        end;
+      end;
+    WM_QUERYENDSESSION:
+      Msg.Result := 1;
+    WM_ENDSESSION:
+      Destroy;
   end;
 end;
 

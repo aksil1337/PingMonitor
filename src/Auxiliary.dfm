@@ -2,7 +2,7 @@ object AuxiliaryForm: TAuxiliaryForm
   Left = 200
   Top = 220
   BorderStyle = bsNone
-  Caption = 'AuxiliaryForm'
+  Caption = 'PingMonitor'
   ClientHeight = 285
   ClientWidth = 600
   Color = clBlack
@@ -83,10 +83,12 @@ object AuxiliaryForm: TAuxiliaryForm
     Top = 9
     object ChartOption: TMenuItem
       Caption = 'Display Chart'
+      Hint = 'Chart'
       OnClick = SwapToChartOrLog
     end
     object LogOption: TMenuItem
       Caption = 'Display Log'
+      Hint = 'Log'
       OnClick = SwapToChartOrLog
     end
     object CopyOption: TMenuItem
