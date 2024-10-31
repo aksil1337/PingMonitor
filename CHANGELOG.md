@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.13c Launch Fix (2024-10-31)
+- Fixed a bug that allowed multiple instances of the application to be launched from a single executable file
+
 ## 1.13b Shutdown Fix (2024-10-30)
 - Fixed a bug that prevented Windows from shutting down while the application is running
 
