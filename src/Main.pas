@@ -73,15 +73,14 @@ begin
 
   if (Ping.Initialized) then
     TPingThread.Create(false);
+
+  ToggleAutomaticStartup;
 end;
 
 procedure TMainForm.FormActivate(Sender: TObject);
 begin
   if (Config.Application.RunInTray <> TrayIcon.Visible) then
     ToggleTrayIcon;
-
-  if (Config.Application.RunAtStartup <> StartupOption.Checked) then
-    ToggleAutomaticStartup;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);

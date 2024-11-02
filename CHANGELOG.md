@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.13d Settings Save Fix (2024-11-02)
+- Fixed a bug that caused critical errors if the application was unable to create or modify the INI file
+
 ## 1.13c Launch Fix (2024-10-31)
 - Fixed a bug that allowed multiple instances of the application to be launched from a single executable file
 

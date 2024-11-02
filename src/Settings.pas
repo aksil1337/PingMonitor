@@ -50,10 +50,13 @@ type
     Registry: TRegistry;
     ReadIni: TMemIniFile;
     WriteIni: TIniFile;
+    procedure RebuildIniFile;
     procedure LoadWord(const Section, Ident: String; var Variable: Word);
     procedure SaveWord(const Section, Ident: String; var Variable: Word; Value: Word);
     procedure LoadColor(const Section, Ident: String; var Variable: TColor);
+    procedure SaveColor(const Section, Ident: String; var Variable: TColor; Value: TColor);
     procedure LoadString(const Section, Ident: String; var Variable: String);
+    procedure SaveString(const Section, Ident: String; var Variable: String; Value: String);
     procedure LoadBoolean(const Section, Ident: String; var Variable: Boolean);
     procedure SaveBoolean(const Section, Ident: String; var Variable: Boolean; Value: Boolean);
     function ColorToHex(Color: TColor): String;
@@ -112,8 +115,6 @@ uses
 { Structors }
 
 constructor TSettings.Create;
-var
-  IniPath: String;
 begin
   Config := DefaultConfig;
   Config.Window.Left := Trunc(Screen.Width / 2 - MainForm.Width / 2);
@@ -122,11 +123,7 @@ begin
   Registry := TRegistry.Create;
   Registry.RootKey := HKEY_CURRENT_USER;
 
-  IniPath := ChangeFileExt(Application.ExeName, '.ini');
-
-  ReadIni := TMemIniFile.Create(IniPath);
-  WriteIni := TIniFile.Create(IniPath);
-  TStringList.Create.SaveToFile(IniPath);
+  RebuildIniFile;
 
   LoadColor('Quality', 'ExcellentColor', Config.Quality.ExcellentColor);
   LoadColor('Quality', 'GoodColor', Config.Quality.GoodColor);
@@ -149,8 +146,6 @@ begin
 
   LoadBoolean('Details', 'DisplayLog', Config.Details.DisplayLog);
 
-  SaveStartupPreferences(Config.Application.RunAtStartup);
-
   ReadIni.Free;
 end;
 
@@ -162,16 +157,31 @@ end;
 
 { Methods }
 
+procedure TSettings.RebuildIniFile;
+var
+  IniPath: String;
+begin
+  IniPath := ChangeFileExt(Application.ExeName, '.ini');
+
+  try
+    ReadIni := TMemIniFile.Create(IniPath);
+    WriteIni := TIniFile.Create(IniPath);
+    TStringList.Create.SaveToFile(IniPath);
+  except end;
+end;
+
 procedure TSettings.LoadWord(const Section, Ident: String; var Variable: Word);
 begin
   Variable := ReadIni.ReadInteger(Section, Ident, Variable);
-  WriteIni.WriteInteger(Section, Ident, Variable);
+  SaveWord(Section, Ident, Variable, Variable);
 end;
 
 procedure TSettings.SaveWord(const Section, Ident: String; var Variable: Word; Value: Word);
 begin
-  Variable := Value;
-  WriteIni.WriteInteger(Section, Ident, Variable);
+  try
+    WriteIni.WriteInteger(Section, Ident, Value);
+    Variable := Value;
+  except end;
 end;
 
 procedure TSettings.LoadColor(const Section, Ident: String; var Variable: TColor);
@@ -186,7 +196,15 @@ begin
     Variable := Default;
   end;
 
-  WriteIni.WriteString(Section, Ident, ColorToHex(Variable));
+  SaveColor(Section, Ident, Variable, Variable);
+end;
+
+procedure TSettings.SaveColor(const Section, Ident: String; var Variable: TColor; Value: TColor);
+begin
+  try
+    WriteIni.WriteString(Section, Ident, ColorToHex(Value));
+    Variable := Value;
+  except end;
 end;
 
 procedure TSettings.LoadString(const Section, Ident: String; var Variable: String);
@@ -199,19 +217,29 @@ begin
   if (Variable = '') then
     Variable := Default;
 
-  WriteIni.WriteString(Section, Ident, Variable);
+  SaveString(Section, Ident, Variable, Variable);
+end;
+
+procedure TSettings.SaveString(const Section, Ident: String; var Variable: String; Value: String);
+begin
+  try
+    WriteIni.WriteString(Section, Ident, Value);
+    Variable := Value;
+  except end;
 end;
 
 procedure TSettings.LoadBoolean(const Section, Ident: String; var Variable: Boolean);
 begin
   Variable := ReadIni.ReadBool(Section, Ident, Variable);
-  WriteIni.WriteBool(Section, Ident, Variable);
+  SaveBoolean(Section, Ident, Variable, Variable);
 end;
 
 procedure TSettings.SaveBoolean(const Section, Ident: String; var Variable: Boolean; Value: Boolean);
 begin
-  Variable := Value;
-  WriteIni.WriteBool(Section, Ident, Variable);
+  try
+    WriteIni.WriteBool(Section, Ident, Value);
+    Variable := Value;
+  except end;
 end;
 
 function TSettings.ColorToHex(Color: TColor): String;
